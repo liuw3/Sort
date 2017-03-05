@@ -1,0 +1,513 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Getting Started with Tableau"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This is the script to use for a \"live\" walkthrough introduction to Tableau. It follows two introductions on the Tableau website.\n",
+    "\n",
+    "The [first one](http://downloads.tableau.com/quickstart/main-guides/en-us/desktop_getstarted9.0.pdf) is a simple \"Getting Started\" overview.\n",
+    "\n",
+    "Later on in this Notebook, we'll work through [this one](http://www.tableausoftware.com/beginners-data-visualization) that explores some historical data from the GSS using data visualization to uncover hidden trends."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Getting Started with Tableau Desktop"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Three steps:\n",
+    "\n",
+    "1. Connect to data\n",
+    "2. Build a view\n",
+    "3. Create a story"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Connect to Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The first thing to do when you start Tableau is to connect to your data. Follow the steps below to connect to a sample Excel workbook called **Sample-Superstore.xls** that comes with Tableau."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "1. Under Connect, you select a data source either from a file or a server or a saved data source.\n",
+    "\n",
+    "    > For this introduction, select Excel.\n",
+    "    > \n",
+    "    > Note: Alternatively, you could simply choose the target data source from the Saved Data Source list.\n",
+    "    \n",
+    "2. Open the data file\n",
+    "\n",
+    "    > Go to the Datasources folder in your Tableau Repository and open the **Sample-Superstore.xls** file found in the\n",
+    "    > 10.1/en_US-US directory.\n",
+    "    > \n",
+    "    > Your Tableau Repository is located in your Documents folder. \n",
+    "    > \n",
+    "    > Note: Excel files must be formatted correctly for Tableau - more about this later in BA575\n",
+    "    \n",
+    "3. Set up the connection\n",
+    "\n",
+    "    >Drag the **Orders** worksheet to the \"Drag sheets here\" area, and then click the Sheet tab to start analyzing your data.\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Create a View"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "After you connect to data, fields are displayed on the left side of the workbook as Dimensions and Measures. Create views by dragging and dropping fields onto shelves.\n",
+    "\n",
+    "1. Drag a dimension to the Columns shelf\n",
+    "\n",
+    "    > Drag the **Category** field to the **Columns** shelf.\n",
+    "\n",
+    "2. Drag a dimension to the Rows shelf\n",
+    "\n",
+    "    > Drag **Region** to the **Rows** shelf.\n",
+    "\n",
+    "3. Drag a measure to Text\n",
+    "\n",
+    "    > Drag **Sales** to **Text** on the Marks card.\n",
+    "\n",
+    "4. Drag another dimension to Rows\n",
+    "\n",
+    "    > Drag **Segment** to the **Rows** shelf.\n",
+    "    >\n",
+    "    > You now have a crosstab view (a text summary)\n",
+    "\n",
+    "5. Visualize your data\n",
+    "\n",
+    "    > From the Marks card, drag **Sales** to the **Columns** shelf.\n",
+    "\n",
+    "6. Use color to show more information\n",
+    "\n",
+    "    > Drag **Region** from the Data pane to **Color** on the Marks card.\n",
+    "    >\n",
+    "    > You can now quickly pick out the best and worst performing product categories, regions and customer segments."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Create a Story"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "After you create a view you can use it to tell a story with your data. With Tableau Story Points, you can show how facts are connected, provide context, demonstrate how decisions relate to outcomes, and more.\n",
+    "\n",
+    "1. Open a new story\n",
+    "\n",
+    "    > From the Story menu, select **New Story**.\n",
+    "    \n",
+    "2. Create a story point\n",
+    "\n",
+    "    > Drag **Sheet 1** from the **Dashboards and Sheets** pane and drop it in the center of the view.\n",
+    "    \n",
+    "3. Describe the view\n",
+    "\n",
+    "    > Click a story point in the navigator to add a caption.\n",
+    "    >\n",
+    "    > You can edit, organize, and annotate all the points in your story using the navigator.\n",
+    "\n",
+    "4. Continue the story\n",
+    "\n",
+    "    > Click **New Blank Point** to add a story point or click **Duplicate** to create a new story point by making changes to the current one."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Another Example - Using Visualization to Uncover Hidden Trends"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## The General Social Survey"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The General Social Survey is an NSF-funded survey, interviewing more than 50,000 Americans over nearly 3 decades. Survey questions cover topics ranging from political, to economic, to educational, and more. But to keep things interesting, we'll be talking about premarital sex.\n",
+    "\n",
+    "Acceptance of premarital sex has been steadily increasing in the US. In the 2008 General Social Survey, for the first time ever, a majority of respondents said they believed that premarital sex was \"not wrong at all\". In this tutorial, we'll be visualizing historical data from the GSS and will uncover some hidden trends."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Connect to the Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Download the CSV file with the [GSS data](http://mkt.tableausoftware.com/files/PremaritalSex.csv).\n",
+    "\n",
+    "Launch Tableau.\n",
+    "\n",
+    "`Connect to Data`, `Text File`, choose PremaritalSex.csv\n",
+    "\n",
+    "We can see a preview of the data - 10,000 rows, eight columns. We can also see that there is some missing data. \"SEX\" is coded with a 1 and a 2.\n",
+    "\n",
+    "`Go to Worksheet`\n",
+    "\n",
+    "import \n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "IndentationError",
+     "evalue": "unexpected indent (<ipython-input-5-7c99b8cc4052>, line 4)",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;36m  File \u001b[0;32m\"<ipython-input-5-7c99b8cc4052>\"\u001b[0;36m, line \u001b[0;32m4\u001b[0m\n\u001b[0;31m    reader unicodecsv.DictReader(f)\u001b[0m\n\u001b[0m    ^\u001b[0m\n\u001b[0;31mIndentationError\u001b[0m\u001b[0;31m:\u001b[0m unexpected indent\n"
+     ]
+    }
+   ],
+   "source": [
+    "import unicodecsv\n",
+    "PremaritalSex=[]\n",
+    "f= open ('PremaritalSex.csv', 'rb')\n",
+    "    reader unicodecsv.DictReader(f)\n",
+    "    for row in reader: \n",
+    "        PremaritalSex.append(row)\n",
+    "f.close()\n",
+    "enrollments[0]\n",
+    "print row\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Tableau automatically reads the field names from the data and populates the dimensions and measures areas. **Dimensions** contain categorical data like Marital Status. **Measures** contain numerical data like Age."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Dimensions and Measures"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Tableau did a pretty good job of figuring out what goes where, but notice that Sex is included under measures when it should really be a category. Our data file used \"1\" and \"2\" to represent male and female, so Tableau thought it was a numerical field. \n",
+    "\n",
+    "Let's fix that. Simply drag SEX from the Measures area and drop it in the Dimensions area.\n",
+    "\n",
+    "Be sure that Year is a Dimension."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Aliases and Data Labels"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This data set includes information about premarital sex and sex frequency. The variable \"SEX\" is really gender. To make thing less confusing, change the name and data labels (Aliases) for \"SEX\".\n",
+    "\n",
+    "Right-click SEX and rename it to Gender.\n",
+    "\n",
+    "Make the data labels for Gender more descriptive. Select Data >> PremaritalSex drop-down and choose Edit Aliases for Gender. Change \"1\" to \"Male\" and \"2\" to \"Female\"."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Creating Calculated Fields"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's explore how frequency of having sex is related to other variables in this survey. We'll start by looking at how that variable is coded to see if we can use it directly or maybe modify it. We often want to create a field (variable) that is calculated from other fields in order to have a better data view.\n",
+    "\n",
+    "Right click \"Sexfreq\" and choose \"Describe\". \n",
+    "\n",
+    "Click \"Load\" to see a list of all the existing values in this field. \n",
+    "\n",
+    "The field contains each interviewee's response to the question \n",
+    "\n",
+    "    \"How many times did you have sex last year?\" \n",
+    "    \n",
+    "Their responses are grouped into seven bins (plus a null value for those interviewees who gave no response or weren't asked), but it would be more interesting if we had a numerical value for each person's yearly sexual frequency.\n",
+    "\n",
+    "Fortunately, we can approximate that."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Right click in the measures area and choose \"Create calculated field\". Name it \"SexPerYear\" and paste the following code into the formula box:\n",
+    "\n",
+    "    Case [SEXFREQ]\n",
+    "    When \"Not at all\" Then 0\n",
+    "    When \"Once or twice\" Then 1.5\n",
+    "    When \"Once a month\" Then 12\n",
+    "    When \"2-3 times a month\" Then 30\n",
+    "    When \"Weekly\" Then 52\n",
+    "    When \"2-3 times per week\" Then 130\n",
+    "    When \"4+ times per week\" Then 250\n",
+    "    Else Null\n",
+    "    End\n",
+    "    \n",
+    "This code creates a numerical field for each respondent. The field contains the approximate number of times they had sex in the past year, based on their answer to the survey question."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Data Visualization"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can examine this new variable visually in just a few clicks. \n",
+    "\n",
+    "Drag YEAR to the columns shelf and drag SexPerYear to the rows shelf. \n",
+    "\n",
+    "The default aggregation is sum, so we're looking at the total number of times all survey respondents had sex each year. Since there were different numbers of people surveyed each year, this chart isn't particularly informative. \n",
+    "\n",
+    "Right click SUM(SexPerYear) on the Rows shelf and select \"Measure (SUM) >> Average\". Now we have the average number of times survey respondents had sex every year."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Answering Questions with Visual Analysis"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's start asking questions. \n",
+    "\n",
+    "What effect do you think an interviewee's opinion on premarital sex has on the number of times they have sex each year? \n",
+    "\n",
+    "Drag PREMARSX to the color shelf to find out.\n",
+    "\n",
+    "We can look at trends over time by changing Marks to Line. \n",
+    "\n",
+    "The line for NULL (people who weren't asked this survey question) doesn't tell us anything, so right click NULL in the color legend and choose \"Exclude\"."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Grouping Data Set Members"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Suppose we don't really want to differentiate between people who think premarital sex is \"always wrong\" and those who think it's \"almost always wrong\". Instead, we'll group them together. \n",
+    "\n",
+    "Hold down the Command or Control key, select \"almost always wrong\" and \"always wrong\", right click, and choose \"group\".\n",
+    "\n",
+    "We have an interesting result already. Over the past 20 years, those opposed to premarital sex have been having more and more sex on average each year, while those who think it is not wrong at all have been having less and less. Why do you think this is?"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Edit Marks and Color Legends"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Before we try to answer this question, let's make our graph even easier to understand.\n",
+    "\n",
+    "Change the color legend. \n",
+    "\n",
+    "Right click inside the color legend and select \"Edit Colors\". Change the Color Palette dropdown from Automatic to Traffic Light. \n",
+    "\n",
+    "    Click on the \"Almost always wrong, Always wrong\" group and then select a nice shade of red. \n",
+    "    Click \"Not wrong at all\" and select a shade of green.\n",
+    "    Click \"Sometimes wrong\" and select a shade of yellow. \n",
+    "\n",
+    "Close and then in the color legend, drag \"Not wrong at all\" to the bottom so the opinions are in order.\n",
+    "\n",
+    "We don't want to confuse correlation with causality, though. It's possible (likely) that there's a confounding variable at work here, and one of the most likely culprits is age. \n",
+    "\n",
+    "Let's look at how the average age of these three groups has changed over the years."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Editing an Existing Visualization"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Right click on the \"Sheet 1\" tab at the bottom of the Tableau window and choose \"Duplicate\". \n",
+    "\n",
+    "On the new sheet, \"Sheet 2\", drag Age from the Measures box and drop it directly on top of the \"AVG(SexPerYear)\" field on the Rows shelf. \"AVG(SexPerYear)\" will disappear and be replaced with \"SUM(AGE)\". Right click \"SUM(AGE)\" and select  \"Measure (SUM) >> Average\". We see now that the average age of those opposing premarital sex has been decreasing, while the average age of those supporting it has been increasing.\n",
+    "\n",
+    "Since younger people have sex much more frequently than older people (create a new worksheet plotting SexPerYear against AGE if you want to see for yourself), we can see that the puzzling trends in sexual activity are likely linked to the changing average age of these difference groups.\n",
+    "\n",
+    "The question remains, however, why is the demographic makeup of these groups changing? Why would the average premarital sex opponent be getting younger and younger? Does it have something to do with recent trends in abstinence education? That seems unlikely, as the shift in age has been going on for twenty years."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's examine more closely the changing opinions among the young and the old. \n",
+    "\n",
+    "Create a new calculated field, this time in the dimensions box. Call it \"Binned Age (< 40)\"\n",
+    "\n",
+    "    IF [AGE]<40 THEN '<40'\n",
+    "    ELSE '40+'\n",
+    "    END"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Switching Between Different Chart Types"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Duplicate Sheet 2. On the new sheet, switch the Marks dropdown menu from \"Line\" to \"Bar\". \n",
+    "\n",
+    "Drag \"Number of Records\" from the Measures box to the rows shelf and use it to replace the \"AVG(AGE)\" field.\n",
+    "\n",
+    "We can now see how many respondents each year had each opinion on premarital sex. However, the total number of respondents each year vary by quite a bit, so looking at percentages will make the graph much more understandable."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Calculating Percentages"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "From the Analysis menu, choose \"Percentage of >> Cell\". \n",
+    "\n",
+    "It appears that acceptance of premarital sex is slowly growing among the general population. \n",
+    "\n",
+    "However, we are particularly interested in how opinions were changing within age brackets. So drag the \"Binned Age (< 40)\" dimension to the column shelf and drop it to the left of YEAR.\n",
+    "\n",
+    "The answer appears when we segment the population into under-40 and over-40 age brackets. In the under-40 age bracket, beliefs have remained remarkably consistent over the past twenty years. In the over-40 age bracket, on the other hand, there has been a clear shift towards increased acceptance of premarital sex.  Do you think this shift represents an actual shift in belief within individuals, or a shift in the population of individuals who make up the older age bracket?"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Summary"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Through \"on-the-fly\" data visualization, we were able to rapidly pull new insights out of our data. Rather than simply creating a chart to report results, we used visual analysis to explore data and discover new findings."
+   ]
+  }
+ ],
+ "metadata": {
+  "anaconda-cloud": {},
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

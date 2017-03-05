@@ -1,0 +1,2190 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Using the pandas World Bank API"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "With `pandas`, we can easily access thousands of panel data series from the World Bank Indicators (WDI) .\n",
+    "\n",
+    "A wrapper for the API is provided as part of the main `pandas` distribution, as part of the [Remote Data Access](http://pandas.pydata.org/pandas-docs/stable/remote_data.html) support.\n",
+    "\n",
+    "This Jupyter Notebook roughly follows examples from the [pandas](http://pandas.pydata.org/pandas-docs/dev/remote_data.html#world-bank) documentation.\n",
+    "\n",
+    "First, we load `pandas` and the remote data access library for the World Bank Indicators API."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "from pandas_datareader import data, wb\n",
+    "pd.options.display.max_colwidth = 200"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Searching for Indicators"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The easiest way to identify an indicator is to search for it by name using a keyword or key phrase."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>name</th>\n",
+       "      <th>source</th>\n",
+       "      <th>sourceNote</th>\n",
+       "      <th>sourceOrganization</th>\n",
+       "      <th>topics</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>9457</th>\n",
+       "      <td>SP.ADO.TFRT</td>\n",
+       "      <td>Adolescent fertility rate (births per 1,000 women ages 15-19)</td>\n",
+       "      <td>World Development Indicators</td>\n",
+       "      <td>Adolescent fertility rate is the number of births per 1,000 women ages 15-19.</td>\n",
+       "      <td>United Nations Population Division, World Population Prospects.</td>\n",
+       "      <td>Health  ; Gender ; Social Development</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9498</th>\n",
+       "      <td>SP.DYN.TFRT.IN</td>\n",
+       "      <td>Fertility rate, total (births per woman)</td>\n",
+       "      <td>World Development Indicators</td>\n",
+       "      <td>Total fertility rate represents the number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fert...</td>\n",
+       "      <td>(1) United Nations Population Division. World Population Prospects, (2) Census reports and other statistical publications from national statistical offices, (3) Eurostat: Demographic Statistics, (...</td>\n",
+       "      <td>Health  ; Gender</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9499</th>\n",
+       "      <td>SP.DYN.TFRT.Q1</td>\n",
+       "      <td>Total fertility rate (TFR) (births per woman): Q1 (lowest)</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9500</th>\n",
+       "      <td>SP.DYN.TFRT.Q2</td>\n",
+       "      <td>Total fertility rate (TFR) (births per woman): Q2</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9501</th>\n",
+       "      <td>SP.DYN.TFRT.Q3</td>\n",
+       "      <td>Total fertility rate (TFR) (births per woman): Q3</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9502</th>\n",
+       "      <td>SP.DYN.TFRT.Q4</td>\n",
+       "      <td>Total fertility rate (TFR) (births per woman): Q4</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9503</th>\n",
+       "      <td>SP.DYN.TFRT.Q5</td>\n",
+       "      <td>Total fertility rate (TFR) (births per woman): Q5 (highest)</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9506</th>\n",
+       "      <td>SP.DYN.WFRT</td>\n",
+       "      <td>Wanted fertility rate (births per woman)</td>\n",
+       "      <td>World Development Indicators</td>\n",
+       "      <td>Wanted fertility rate is an estimate of what the total fertility rate would be if all unwanted births were avoided.</td>\n",
+       "      <td>Demographic and Health Surveys.</td>\n",
+       "      <td>Health  ; Gender</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9507</th>\n",
+       "      <td>SP.DYN.WFRT.Q1</td>\n",
+       "      <td>Total wanted fertility rate (births per woman): Q1 (lowest)</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9508</th>\n",
+       "      <td>SP.DYN.WFRT.Q2</td>\n",
+       "      <td>Total wanted fertility rate (births per woman): Q2</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9509</th>\n",
+       "      <td>SP.DYN.WFRT.Q3</td>\n",
+       "      <td>Total wanted fertility rate (births per woman): Q3</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9510</th>\n",
+       "      <td>SP.DYN.WFRT.Q4</td>\n",
+       "      <td>Total wanted fertility rate (births per woman): Q4</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9511</th>\n",
+       "      <td>SP.DYN.WFRT.Q5</td>\n",
+       "      <td>Total wanted fertility rate (births per woman): Q5 (highest)</td>\n",
+       "      <td>Health Nutrition and Population Statistics by Wealth Quintile</td>\n",
+       "      <td>Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...</td>\n",
+       "      <td>Household Surveys (DHS, MICS)</td>\n",
+       "      <td>Health</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                  id  \\\n",
+       "9457     SP.ADO.TFRT   \n",
+       "9498  SP.DYN.TFRT.IN   \n",
+       "9499  SP.DYN.TFRT.Q1   \n",
+       "9500  SP.DYN.TFRT.Q2   \n",
+       "9501  SP.DYN.TFRT.Q3   \n",
+       "9502  SP.DYN.TFRT.Q4   \n",
+       "9503  SP.DYN.TFRT.Q5   \n",
+       "9506     SP.DYN.WFRT   \n",
+       "9507  SP.DYN.WFRT.Q1   \n",
+       "9508  SP.DYN.WFRT.Q2   \n",
+       "9509  SP.DYN.WFRT.Q3   \n",
+       "9510  SP.DYN.WFRT.Q4   \n",
+       "9511  SP.DYN.WFRT.Q5   \n",
+       "\n",
+       "                                                               name  \\\n",
+       "9457  Adolescent fertility rate (births per 1,000 women ages 15-19)   \n",
+       "9498                       Fertility rate, total (births per woman)   \n",
+       "9499     Total fertility rate (TFR) (births per woman): Q1 (lowest)   \n",
+       "9500              Total fertility rate (TFR) (births per woman): Q2   \n",
+       "9501              Total fertility rate (TFR) (births per woman): Q3   \n",
+       "9502              Total fertility rate (TFR) (births per woman): Q4   \n",
+       "9503    Total fertility rate (TFR) (births per woman): Q5 (highest)   \n",
+       "9506                       Wanted fertility rate (births per woman)   \n",
+       "9507    Total wanted fertility rate (births per woman): Q1 (lowest)   \n",
+       "9508             Total wanted fertility rate (births per woman): Q2   \n",
+       "9509             Total wanted fertility rate (births per woman): Q3   \n",
+       "9510             Total wanted fertility rate (births per woman): Q4   \n",
+       "9511   Total wanted fertility rate (births per woman): Q5 (highest)   \n",
+       "\n",
+       "                                                             source  \\\n",
+       "9457                                   World Development Indicators   \n",
+       "9498                                   World Development Indicators   \n",
+       "9499  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9500  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9501  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9502  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9503  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9506                                   World Development Indicators   \n",
+       "9507  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9508  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9509  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9510  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "9511  Health Nutrition and Population Statistics by Wealth Quintile   \n",
+       "\n",
+       "                                                                                                                                                                                                   sourceNote  \\\n",
+       "9457                                                                                                                            Adolescent fertility rate is the number of births per 1,000 women ages 15-19.   \n",
+       "9498  Total fertility rate represents the number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fert...   \n",
+       "9499  Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...   \n",
+       "9500  Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...   \n",
+       "9501  Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...   \n",
+       "9502  Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...   \n",
+       "9503  Total fertility rate (TFR): The number of children that would be born to a woman if she were to live to the end of her childbearing years and bear children in accordance with age-specific fertilit...   \n",
+       "9506                                                                                      Wanted fertility rate is an estimate of what the total fertility rate would be if all unwanted births were avoided.   \n",
+       "9507  Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...   \n",
+       "9508  Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...   \n",
+       "9509  Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...   \n",
+       "9510  Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...   \n",
+       "9511  Total wanted fertility rate: Total wanted fertility rate is an estimate what the total fertility rate would be if all unwanted births were avoided. The reference period is three years preceding th...   \n",
+       "\n",
+       "                                                                                                                                                                                           sourceOrganization  \\\n",
+       "9457                                                                                                                                          United Nations Population Division, World Population Prospects.   \n",
+       "9498  (1) United Nations Population Division. World Population Prospects, (2) Census reports and other statistical publications from national statistical offices, (3) Eurostat: Demographic Statistics, (...   \n",
+       "9499                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9500                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9501                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9502                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9503                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9506                                                                                                                                                                          Demographic and Health Surveys.   \n",
+       "9507                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9508                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9509                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9510                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "9511                                                                                                                                                                            Household Surveys (DHS, MICS)   \n",
+       "\n",
+       "                                      topics  \n",
+       "9457  Health  ; Gender ; Social Development   \n",
+       "9498                        Health  ; Gender  \n",
+       "9499                                 Health   \n",
+       "9500                                 Health   \n",
+       "9501                                 Health   \n",
+       "9502                                 Health   \n",
+       "9503                                 Health   \n",
+       "9506                        Health  ; Gender  \n",
+       "9507                                 Health   \n",
+       "9508                                 Health   \n",
+       "9509                                 Health   \n",
+       "9510                                 Health   \n",
+       "9511                                 Health   "
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "wb.search('fertility rate')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We also can get a full list of indicators."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>name</th>\n",
+       "      <th>source</th>\n",
+       "      <th>sourceNote</th>\n",
+       "      <th>sourceOrganization</th>\n",
+       "      <th>topics</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1.0.HCount.1.90usd</td>\n",
+       "      <td>Poverty Headcount ($1.90 a day)</td>\n",
+       "      <td>LAC Equity Lab</td>\n",
+       "      <td>The poverty headcount index measures the proportion of the population with daily per capita income (in 2011 PPP) below the poverty line.</td>\n",
+       "      <td>LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).</td>\n",
+       "      <td>Poverty</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1.0.HCount.2.5usd</td>\n",
+       "      <td>Poverty Headcount ($2.50 a day)</td>\n",
+       "      <td>LAC Equity Lab</td>\n",
+       "      <td>The poverty headcount index measures the proportion of the population with daily per capita income (in 2005 PPP) below the poverty line.</td>\n",
+       "      <td>LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).</td>\n",
+       "      <td>Poverty</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1.0.HCount.Mid10to50</td>\n",
+       "      <td>Middle Class ($10-50 a day) Headcount</td>\n",
+       "      <td>LAC Equity Lab</td>\n",
+       "      <td>The poverty headcount index measures the proportion of the population with daily per capita income (in 2005 PPP) below the poverty line.</td>\n",
+       "      <td>LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).</td>\n",
+       "      <td>Poverty</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1.0.HCount.Ofcl</td>\n",
+       "      <td>Official Moderate Poverty Rate-National</td>\n",
+       "      <td>LAC Equity Lab</td>\n",
+       "      <td>The poverty headcount index measures the proportion of the population with daily per capita income below the official poverty line developed by each country.</td>\n",
+       "      <td>LAC Equity Lab tabulations of data from National Statistical Offices.</td>\n",
+       "      <td>Poverty</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1.0.HCount.Poor4uds</td>\n",
+       "      <td>Poverty Headcount ($4 a day)</td>\n",
+       "      <td>LAC Equity Lab</td>\n",
+       "      <td>The poverty headcount index measures the proportion of the population with daily per capita income (in 2005 PPP) below the poverty line.</td>\n",
+       "      <td>LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).</td>\n",
+       "      <td>Poverty</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                     id                                     name  \\\n",
+       "0    1.0.HCount.1.90usd          Poverty Headcount ($1.90 a day)   \n",
+       "1     1.0.HCount.2.5usd          Poverty Headcount ($2.50 a day)   \n",
+       "2  1.0.HCount.Mid10to50    Middle Class ($10-50 a day) Headcount   \n",
+       "3       1.0.HCount.Ofcl  Official Moderate Poverty Rate-National   \n",
+       "4   1.0.HCount.Poor4uds             Poverty Headcount ($4 a day)   \n",
+       "\n",
+       "           source  \\\n",
+       "0  LAC Equity Lab   \n",
+       "1  LAC Equity Lab   \n",
+       "2  LAC Equity Lab   \n",
+       "3  LAC Equity Lab   \n",
+       "4  LAC Equity Lab   \n",
+       "\n",
+       "                                                                                                                                                      sourceNote  \\\n",
+       "0                       The poverty headcount index measures the proportion of the population with daily per capita income (in 2011 PPP) below the poverty line.   \n",
+       "1                       The poverty headcount index measures the proportion of the population with daily per capita income (in 2005 PPP) below the poverty line.   \n",
+       "2                       The poverty headcount index measures the proportion of the population with daily per capita income (in 2005 PPP) below the poverty line.   \n",
+       "3  The poverty headcount index measures the proportion of the population with daily per capita income below the official poverty line developed by each country.   \n",
+       "4                       The poverty headcount index measures the proportion of the population with daily per capita income (in 2005 PPP) below the poverty line.   \n",
+       "\n",
+       "                                                      sourceOrganization  \\\n",
+       "0      LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).   \n",
+       "1      LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).   \n",
+       "2      LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).   \n",
+       "3  LAC Equity Lab tabulations of data from National Statistical Offices.   \n",
+       "4      LAC Equity Lab tabulations of SEDLAC (CEDLAS and the World Bank).   \n",
+       "\n",
+       "     topics  \n",
+       "0  Poverty   \n",
+       "1  Poverty   \n",
+       "2  Poverty   \n",
+       "3  Poverty   \n",
+       "4  Poverty   "
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "indicators=wb.get_indicators()\n",
+    "indicators.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "Int64Index: 16038 entries, 0 to 16037\n",
+      "Data columns (total 6 columns):\n",
+      "id                    16038 non-null object\n",
+      "name                  16038 non-null object\n",
+      "source                16038 non-null object\n",
+      "sourceNote            16038 non-null object\n",
+      "sourceOrganization    16038 non-null object\n",
+      "topics                16038 non-null object\n",
+      "dtypes: object(6)\n",
+      "memory usage: 877.1+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "indicators.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If we know the identifier  - or part of the identifier - for a particular indicator, we can look up details for it directly. Use the * character as a wildcard character."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>name</th>\n",
+       "      <th>source</th>\n",
+       "      <th>sourceNote</th>\n",
+       "      <th>sourceOrganization</th>\n",
+       "      <th>topics</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>685</th>\n",
+       "      <td>6.0.GDPpc_constant</td>\n",
+       "      <td>GDP per capita, PPP (constant 2011 international $)</td>\n",
+       "      <td>LAC Equity Lab</td>\n",
+       "      <td>GDP per capita based on purchasing power parity (PPP). PPP GDP is gross domestic product converted to international dollars using purchasing power parity rates. An international dollar has the sam...</td>\n",
+       "      <td>World Development Indicators (World Bank)</td>\n",
+       "      <td>Economy &amp; Growth</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7437</th>\n",
+       "      <td>NY.GDP.PCAP.KD</td>\n",
+       "      <td>GDP per capita (constant 2010 US$)</td>\n",
+       "      <td>World Development Indicators</td>\n",
+       "      <td>GDP per capita is gross domestic product divided by midyear population. GDP is the sum of gross value added by all resident producers in the economy plus any product taxes and minus any subsidies ...</td>\n",
+       "      <td>World Bank national accounts data, and OECD National Accounts data files.</td>\n",
+       "      <td>Economy &amp; Growth</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7439</th>\n",
+       "      <td>NY.GDP.PCAP.KN</td>\n",
+       "      <td>GDP per capita (constant LCU)</td>\n",
+       "      <td>World Development Indicators</td>\n",
+       "      <td>GDP per capita is gross domestic product divided by midyear population. GDP at purchaser's prices is the sum of gross value added by all resident producers in the economy plus any product taxes an...</td>\n",
+       "      <td>World Bank national accounts data, and OECD National Accounts data files.</td>\n",
+       "      <td>Economy &amp; Growth</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7441</th>\n",
+       "      <td>NY.GDP.PCAP.PP.KD</td>\n",
+       "      <td>GDP per capita, PPP (constant 2011 international $)</td>\n",
+       "      <td>World Development Indicators</td>\n",
+       "      <td>GDP per capita based on purchasing power parity (PPP). PPP GDP is gross domestic product converted to international dollars using purchasing power parity rates. An international dollar has the sam...</td>\n",
+       "      <td>World Bank, International Comparison Program database.</td>\n",
+       "      <td>Economy &amp; Growth</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                      id  \\\n",
+       "685   6.0.GDPpc_constant   \n",
+       "7437      NY.GDP.PCAP.KD   \n",
+       "7439      NY.GDP.PCAP.KN   \n",
+       "7441   NY.GDP.PCAP.PP.KD   \n",
+       "\n",
+       "                                                      name  \\\n",
+       "685   GDP per capita, PPP (constant 2011 international $)    \n",
+       "7437                    GDP per capita (constant 2010 US$)   \n",
+       "7439                         GDP per capita (constant LCU)   \n",
+       "7441   GDP per capita, PPP (constant 2011 international $)   \n",
+       "\n",
+       "                            source  \\\n",
+       "685                 LAC Equity Lab   \n",
+       "7437  World Development Indicators   \n",
+       "7439  World Development Indicators   \n",
+       "7441  World Development Indicators   \n",
+       "\n",
+       "                                                                                                                                                                                                   sourceNote  \\\n",
+       "685   GDP per capita based on purchasing power parity (PPP). PPP GDP is gross domestic product converted to international dollars using purchasing power parity rates. An international dollar has the sam...   \n",
+       "7437  GDP per capita is gross domestic product divided by midyear population. GDP is the sum of gross value added by all resident producers in the economy plus any product taxes and minus any subsidies ...   \n",
+       "7439  GDP per capita is gross domestic product divided by midyear population. GDP at purchaser's prices is the sum of gross value added by all resident producers in the economy plus any product taxes an...   \n",
+       "7441  GDP per capita based on purchasing power parity (PPP). PPP GDP is gross domestic product converted to international dollars using purchasing power parity rates. An international dollar has the sam...   \n",
+       "\n",
+       "                                                             sourceOrganization  \\\n",
+       "685                                   World Development Indicators (World Bank)   \n",
+       "7437  World Bank national accounts data, and OECD National Accounts data files.   \n",
+       "7439  World Bank national accounts data, and OECD National Accounts data files.   \n",
+       "7441                     World Bank, International Comparison Program database.   \n",
+       "\n",
+       "                topics  \n",
+       "685   Economy & Growth  \n",
+       "7437  Economy & Growth  \n",
+       "7439  Economy & Growth  \n",
+       "7441  Economy & Growth  "
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "wb.search('gdp.*capita.*const')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>name</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>685</th>\n",
+       "      <td>6.0.GDPpc_constant</td>\n",
+       "      <td>GDP per capita, PPP (constant 2011 international $)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7437</th>\n",
+       "      <td>NY.GDP.PCAP.KD</td>\n",
+       "      <td>GDP per capita (constant 2010 US$)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7439</th>\n",
+       "      <td>NY.GDP.PCAP.KN</td>\n",
+       "      <td>GDP per capita (constant LCU)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7441</th>\n",
+       "      <td>NY.GDP.PCAP.PP.KD</td>\n",
+       "      <td>GDP per capita, PPP (constant 2011 international $)</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                      id                                                  name\n",
+       "685   6.0.GDPpc_constant  GDP per capita, PPP (constant 2011 international $) \n",
+       "7437      NY.GDP.PCAP.KD                    GDP per capita (constant 2010 US$)\n",
+       "7439      NY.GDP.PCAP.KN                         GDP per capita (constant LCU)\n",
+       "7441   NY.GDP.PCAP.PP.KD   GDP per capita, PPP (constant 2011 international $)"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "wb.search('gdp.*capita.*const').iloc[:,:2]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "685     GDP per capita, PPP (constant 2011 international $) \n",
+       "7437                      GDP per capita (constant 2010 US$)\n",
+       "7439                           GDP per capita (constant LCU)\n",
+       "7441     GDP per capita, PPP (constant 2011 international $)\n",
+       "Name: name, dtype: object"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "wb.search('gdp.*capita.*const').name"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Identifying Countries"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "When retrieving a dataset, we can specifiy which country, countries or regions we want the data for. The locations are identified using the appropriate [ISO-2 code](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2). To look up countries we can download the full country list."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>adminregion</th>\n",
+       "      <th>capitalCity</th>\n",
+       "      <th>iso3c</th>\n",
+       "      <th>incomeLevel</th>\n",
+       "      <th>iso2c</th>\n",
+       "      <th>latitude</th>\n",
+       "      <th>lendingType</th>\n",
+       "      <th>longitude</th>\n",
+       "      <th>name</th>\n",
+       "      <th>region</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td></td>\n",
+       "      <td>Oranjestad</td>\n",
+       "      <td>ABW</td>\n",
+       "      <td>High income</td>\n",
+       "      <td>AW</td>\n",
+       "      <td>12.51670</td>\n",
+       "      <td>Not classified</td>\n",
+       "      <td>-70.0167</td>\n",
+       "      <td>Aruba</td>\n",
+       "      <td>Latin America &amp; Caribbean</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>South Asia</td>\n",
+       "      <td>Kabul</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>Low income</td>\n",
+       "      <td>AF</td>\n",
+       "      <td>34.52280</td>\n",
+       "      <td>IDA</td>\n",
+       "      <td>69.1761</td>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>South Asia</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td></td>\n",
+       "      <td></td>\n",
+       "      <td>AFR</td>\n",
+       "      <td>Aggregates</td>\n",
+       "      <td>A9</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Aggregates</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Africa</td>\n",
+       "      <td>Aggregates</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Sub-Saharan Africa (excluding high income)</td>\n",
+       "      <td>Luanda</td>\n",
+       "      <td>AGO</td>\n",
+       "      <td>Upper middle income</td>\n",
+       "      <td>AO</td>\n",
+       "      <td>-8.81155</td>\n",
+       "      <td>IBRD</td>\n",
+       "      <td>13.2420</td>\n",
+       "      <td>Angola</td>\n",
+       "      <td>Sub-Saharan Africa</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Europe &amp; Central Asia (excluding high income)</td>\n",
+       "      <td>Tirane</td>\n",
+       "      <td>ALB</td>\n",
+       "      <td>Upper middle income</td>\n",
+       "      <td>AL</td>\n",
+       "      <td>41.33170</td>\n",
+       "      <td>IBRD</td>\n",
+       "      <td>19.8172</td>\n",
+       "      <td>Albania</td>\n",
+       "      <td>Europe &amp; Central Asia</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                     adminregion capitalCity iso3c  \\\n",
+       "0                                                 Oranjestad   ABW   \n",
+       "1                                     South Asia       Kabul   AFG   \n",
+       "2                                                              AFR   \n",
+       "3     Sub-Saharan Africa (excluding high income)      Luanda   AGO   \n",
+       "4  Europe & Central Asia (excluding high income)      Tirane   ALB   \n",
+       "\n",
+       "           incomeLevel iso2c  latitude     lendingType  longitude  \\\n",
+       "0          High income    AW  12.51670  Not classified   -70.0167   \n",
+       "1           Low income    AF  34.52280             IDA    69.1761   \n",
+       "2           Aggregates    A9       NaN      Aggregates        NaN   \n",
+       "3  Upper middle income    AO  -8.81155            IBRD    13.2420   \n",
+       "4  Upper middle income    AL  41.33170            IBRD    19.8172   \n",
+       "\n",
+       "          name                      region  \n",
+       "0        Aruba  Latin America & Caribbean   \n",
+       "1  Afghanistan                  South Asia  \n",
+       "2       Africa                  Aggregates  \n",
+       "3       Angola         Sub-Saharan Africa   \n",
+       "4      Albania       Europe & Central Asia  "
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "countries=wb.get_countries()\n",
+    "countries.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 304 entries, 0 to 303\n",
+      "Data columns (total 10 columns):\n",
+      "adminregion    304 non-null object\n",
+      "capitalCity    304 non-null object\n",
+      "iso3c          304 non-null object\n",
+      "incomeLevel    304 non-null object\n",
+      "iso2c          304 non-null object\n",
+      "latitude       211 non-null float64\n",
+      "lendingType    304 non-null object\n",
+      "longitude      211 non-null float64\n",
+      "name           304 non-null object\n",
+      "region         304 non-null object\n",
+      "dtypes: float64(2), object(8)\n",
+      "memory usage: 23.8+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "countries.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can search for a particular country."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>adminregion</th>\n",
+       "      <th>capitalCity</th>\n",
+       "      <th>iso3c</th>\n",
+       "      <th>incomeLevel</th>\n",
+       "      <th>iso2c</th>\n",
+       "      <th>latitude</th>\n",
+       "      <th>lendingType</th>\n",
+       "      <th>longitude</th>\n",
+       "      <th>name</th>\n",
+       "      <th>region</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Sub-Saharan Africa (excluding high income)</td>\n",
+       "      <td>Luanda</td>\n",
+       "      <td>AGO</td>\n",
+       "      <td>Upper middle income</td>\n",
+       "      <td>AO</td>\n",
+       "      <td>-8.81155</td>\n",
+       "      <td>IBRD</td>\n",
+       "      <td>13.242</td>\n",
+       "      <td>Angola</td>\n",
+       "      <td>Sub-Saharan Africa</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                  adminregion capitalCity iso3c  \\\n",
+       "3  Sub-Saharan Africa (excluding high income)      Luanda   AGO   \n",
+       "\n",
+       "           incomeLevel iso2c  latitude lendingType  longitude    name  \\\n",
+       "3  Upper middle income    AO  -8.81155        IBRD     13.242  Angola   \n",
+       "\n",
+       "                region  \n",
+       "3  Sub-Saharan Africa   "
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "countries[countries['name'] == 'Angola']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>adminregion</th>\n",
+       "      <th>capitalCity</th>\n",
+       "      <th>iso3c</th>\n",
+       "      <th>incomeLevel</th>\n",
+       "      <th>iso2c</th>\n",
+       "      <th>latitude</th>\n",
+       "      <th>lendingType</th>\n",
+       "      <th>longitude</th>\n",
+       "      <th>name</th>\n",
+       "      <th>region</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>289</th>\n",
+       "      <td></td>\n",
+       "      <td>Washington D.C.</td>\n",
+       "      <td>USA</td>\n",
+       "      <td>High income</td>\n",
+       "      <td>US</td>\n",
+       "      <td>38.8895</td>\n",
+       "      <td>Not classified</td>\n",
+       "      <td>-77.032</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>North America</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    adminregion      capitalCity iso3c  incomeLevel iso2c  latitude  \\\n",
+       "289              Washington D.C.   USA  High income    US   38.8895   \n",
+       "\n",
+       "        lendingType  longitude           name         region  \n",
+       "289  Not classified    -77.032  United States  North America  "
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "countries[countries['iso3c'] == 'USA']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>adminregion</th>\n",
+       "      <th>capitalCity</th>\n",
+       "      <th>iso3c</th>\n",
+       "      <th>incomeLevel</th>\n",
+       "      <th>iso2c</th>\n",
+       "      <th>latitude</th>\n",
+       "      <th>lendingType</th>\n",
+       "      <th>longitude</th>\n",
+       "      <th>name</th>\n",
+       "      <th>region</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>13</th>\n",
+       "      <td></td>\n",
+       "      <td>Canberra</td>\n",
+       "      <td>AUS</td>\n",
+       "      <td>High income</td>\n",
+       "      <td>AU</td>\n",
+       "      <td>-35.2820</td>\n",
+       "      <td>Not classified</td>\n",
+       "      <td>149.1290</td>\n",
+       "      <td>Australia</td>\n",
+       "      <td>East Asia &amp; Pacific</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>196</th>\n",
+       "      <td>Sub-Saharan Africa (excluding high income)</td>\n",
+       "      <td>Port Louis</td>\n",
+       "      <td>MUS</td>\n",
+       "      <td>Upper middle income</td>\n",
+       "      <td>MU</td>\n",
+       "      <td>-20.1605</td>\n",
+       "      <td>IBRD</td>\n",
+       "      <td>57.4977</td>\n",
+       "      <td>Mauritius</td>\n",
+       "      <td>Sub-Saharan Africa</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>237</th>\n",
+       "      <td>Europe &amp; Central Asia (excluding high income)</td>\n",
+       "      <td>Moscow</td>\n",
+       "      <td>RUS</td>\n",
+       "      <td>Upper middle income</td>\n",
+       "      <td>RU</td>\n",
+       "      <td>55.7558</td>\n",
+       "      <td>IBRD</td>\n",
+       "      <td>37.6176</td>\n",
+       "      <td>Russian Federation</td>\n",
+       "      <td>Europe &amp; Central Asia</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>289</th>\n",
+       "      <td></td>\n",
+       "      <td>Washington D.C.</td>\n",
+       "      <td>USA</td>\n",
+       "      <td>High income</td>\n",
+       "      <td>US</td>\n",
+       "      <td>38.8895</td>\n",
+       "      <td>Not classified</td>\n",
+       "      <td>-77.0320</td>\n",
+       "      <td>United States</td>\n",
+       "      <td>North America</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                       adminregion      capitalCity iso3c  \\\n",
+       "13                                                         Canberra   AUS   \n",
+       "196     Sub-Saharan Africa (excluding high income)       Port Louis   MUS   \n",
+       "237  Europe & Central Asia (excluding high income)           Moscow   RUS   \n",
+       "289                                                 Washington D.C.   USA   \n",
+       "\n",
+       "             incomeLevel iso2c  latitude     lendingType  longitude  \\\n",
+       "13           High income    AU  -35.2820  Not classified   149.1290   \n",
+       "196  Upper middle income    MU  -20.1605            IBRD    57.4977   \n",
+       "237  Upper middle income    RU   55.7558            IBRD    37.6176   \n",
+       "289          High income    US   38.8895  Not classified   -77.0320   \n",
+       "\n",
+       "                   name                 region  \n",
+       "13            Australia    East Asia & Pacific  \n",
+       "196           Mauritius    Sub-Saharan Africa   \n",
+       "237  Russian Federation  Europe & Central Asia  \n",
+       "289       United States          North America  "
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "countries[countries['iso3c'].str.contains('US')]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Download Data for a Particular Indicator"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Once we have identified one or more indicators for which we would like to download a dataset, we need to identify the year or range of years, and the country, countries or regions (identified via their ISO-2 code) for which we would like the data.\n",
+    "\n",
+    "Then it is easy to download the dataset we want."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>NY.GDP.PCAP.KD</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th>year</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"7\" valign=\"top\">Canada</th>\n",
+       "      <th>2014</th>\n",
+       "      <td>49895.984853</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2013</th>\n",
+       "      <td>49229.503775</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>48721.180300</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>48455.214016</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>47445.761935</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>46542.110757</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>48508.815279</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"7\" valign=\"top\">Mexico</th>\n",
+       "      <th>2014</th>\n",
+       "      <td>9402.569128</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2013</th>\n",
+       "      <td>9318.395096</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>9319.064370</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>9086.031941</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>8861.493720</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>8560.716392</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>9126.924423</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"7\" valign=\"top\">United States</th>\n",
+       "      <th>2014</th>\n",
+       "      <td>50727.751210</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2013</th>\n",
+       "      <td>49941.489109</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>49481.158654</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>48774.783088</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>48374.086793</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>47575.608563</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>49364.644550</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                    NY.GDP.PCAP.KD\n",
+       "country       year                \n",
+       "Canada        2014    49895.984853\n",
+       "              2013    49229.503775\n",
+       "              2012    48721.180300\n",
+       "              2011    48455.214016\n",
+       "              2010    47445.761935\n",
+       "              2009    46542.110757\n",
+       "              2008    48508.815279\n",
+       "Mexico        2014     9402.569128\n",
+       "              2013     9318.395096\n",
+       "              2012     9319.064370\n",
+       "              2011     9086.031941\n",
+       "              2010     8861.493720\n",
+       "              2009     8560.716392\n",
+       "              2008     9126.924423\n",
+       "United States 2014    50727.751210\n",
+       "              2013    49941.489109\n",
+       "              2012    49481.158654\n",
+       "              2011    48774.783088\n",
+       "              2010    48374.086793\n",
+       "              2009    47575.608563\n",
+       "              2008    49364.644550"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = wb.download(indicator='NY.GDP.PCAP.KD', country=['US', 'CA', 'MX'], start='2008', end=2014)\n",
+    "df"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "It looks like there isn't information yet for 2014."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>NY.GDP.PCAP.KD</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th>year</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"6\" valign=\"top\">Canada</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>49229.503775</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>48721.180300</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>48455.214016</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>47445.761935</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>46542.110757</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>48508.815279</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"6\" valign=\"top\">Mexico</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>9318.395096</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>9319.064370</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>9086.031941</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>8861.493720</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>8560.716392</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>9126.924423</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"6\" valign=\"top\">United States</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>49941.489109</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>49481.158654</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>48774.783088</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>48374.086793</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>47575.608563</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>49364.644550</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                    NY.GDP.PCAP.KD\n",
+       "country       year                \n",
+       "Canada        2013    49229.503775\n",
+       "              2012    48721.180300\n",
+       "              2011    48455.214016\n",
+       "              2010    47445.761935\n",
+       "              2009    46542.110757\n",
+       "              2008    48508.815279\n",
+       "Mexico        2013     9318.395096\n",
+       "              2012     9319.064370\n",
+       "              2011     9086.031941\n",
+       "              2010     8861.493720\n",
+       "              2009     8560.716392\n",
+       "              2008     9126.924423\n",
+       "United States 2013    49941.489109\n",
+       "              2012    49481.158654\n",
+       "              2011    48774.783088\n",
+       "              2010    48374.086793\n",
+       "              2009    47575.608563\n",
+       "              2008    49364.644550"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = wb.download(indicator='NY.GDP.PCAP.KD', country=['US','CA','MX'], start='2008', end=2013)\n",
+    "df"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The result is a DataFrame with a hierarchical index. It is easy to apply `groupby` transformation to it."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>NY.GDP.PCAP.KD</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Canada</th>\n",
+       "      <td>48150.431010</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mexico</th>\n",
+       "      <td>9045.437657</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>United States</th>\n",
+       "      <td>48918.628460</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "               NY.GDP.PCAP.KD\n",
+       "country                      \n",
+       "Canada           48150.431010\n",
+       "Mexico            9045.437657\n",
+       "United States    48918.628460"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.groupby(level=0).mean()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "country\n",
+       "Canada           48150.431010\n",
+       "Mexico            9045.437657\n",
+       "United States    48918.628460\n",
+       "Name: NY.GDP.PCAP.KD, dtype: float64"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df['NY.GDP.PCAP.KD'].groupby(level=0).mean()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If we want to download data for multiple indicators, we need to specify them as a list."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>SP.DYN.TFRT.IN</th>\n",
+       "      <th>NY.GDP.PCAP.KD</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th>year</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"6\" valign=\"top\">Canada</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>1.6100</td>\n",
+       "      <td>49229.503775</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>1.6100</td>\n",
+       "      <td>48721.180300</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>1.6100</td>\n",
+       "      <td>48455.214016</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>1.6269</td>\n",
+       "      <td>47445.761935</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>1.6680</td>\n",
+       "      <td>46542.110757</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>1.6808</td>\n",
+       "      <td>48508.815279</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"6\" valign=\"top\">Mexico</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>2.2720</td>\n",
+       "      <td>9318.395096</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>2.3000</td>\n",
+       "      <td>9319.064370</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>2.3280</td>\n",
+       "      <td>9086.031941</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>2.3560</td>\n",
+       "      <td>8861.493720</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>2.3850</td>\n",
+       "      <td>8560.716392</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>2.4150</td>\n",
+       "      <td>9126.924423</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"6\" valign=\"top\">United States</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>1.8575</td>\n",
+       "      <td>49941.489109</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2012</th>\n",
+       "      <td>1.8805</td>\n",
+       "      <td>49481.158654</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2011</th>\n",
+       "      <td>1.8945</td>\n",
+       "      <td>48774.783088</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2010</th>\n",
+       "      <td>1.9310</td>\n",
+       "      <td>48374.086793</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2009</th>\n",
+       "      <td>2.0020</td>\n",
+       "      <td>47575.608563</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2008</th>\n",
+       "      <td>2.0720</td>\n",
+       "      <td>49364.644550</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                    SP.DYN.TFRT.IN  NY.GDP.PCAP.KD\n",
+       "country       year                                \n",
+       "Canada        2013          1.6100    49229.503775\n",
+       "              2012          1.6100    48721.180300\n",
+       "              2011          1.6100    48455.214016\n",
+       "              2010          1.6269    47445.761935\n",
+       "              2009          1.6680    46542.110757\n",
+       "              2008          1.6808    48508.815279\n",
+       "Mexico        2013          2.2720     9318.395096\n",
+       "              2012          2.3000     9319.064370\n",
+       "              2011          2.3280     9086.031941\n",
+       "              2010          2.3560     8861.493720\n",
+       "              2009          2.3850     8560.716392\n",
+       "              2008          2.4150     9126.924423\n",
+       "United States 2013          1.8575    49941.489109\n",
+       "              2012          1.8805    49481.158654\n",
+       "              2011          1.8945    48774.783088\n",
+       "              2010          1.9310    48374.086793\n",
+       "              2009          2.0020    47575.608563\n",
+       "              2008          2.0720    49364.644550"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = wb.download(indicator=['SP.DYN.TFRT.IN','NY.GDP.PCAP.KD'], country=['US','CA','MX'], start=2008, end=2013)\n",
+    "df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>SP.DYN.TFRT.IN</th>\n",
+       "      <th>NY.GDP.PCAP.KD</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Canada</th>\n",
+       "      <td>1.634283</td>\n",
+       "      <td>48150.431010</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mexico</th>\n",
+       "      <td>2.342667</td>\n",
+       "      <td>9045.437657</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>United States</th>\n",
+       "      <td>1.939583</td>\n",
+       "      <td>48918.628460</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "               SP.DYN.TFRT.IN  NY.GDP.PCAP.KD\n",
+       "country                                      \n",
+       "Canada               1.634283    48150.431010\n",
+       "Mexico               2.342667     9045.437657\n",
+       "United States        1.939583    48918.628460"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.groupby(level=0).mean()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can download data for a single year by setting the start and end dates to the same year. If we only want one country, we just name it."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>NY.GDP.PCAP.KD</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th>year</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>United States</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>49941.489109</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                    NY.GDP.PCAP.KD\n",
+       "country       year                \n",
+       "United States 2013    49941.489109"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = wb.download(indicator='NY.GDP.PCAP.KD', country='US', start=2013, end=2013)\n",
+    "df"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To download the data for all countries, set the country attribute to 'all'."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>SP.DYN.TFRT.IN</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th>year</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Virgin Islands (U.S.)</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>1.770</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>West Bank and Gaza</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>4.241</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Yemen, Rep.</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>4.284</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Zambia</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>5.429</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Zimbabwe</th>\n",
+       "      <th>2013</th>\n",
+       "      <td>3.977</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                            SP.DYN.TFRT.IN\n",
+       "country               year                \n",
+       "Virgin Islands (U.S.) 2013           1.770\n",
+       "West Bank and Gaza    2013           4.241\n",
+       "Yemen, Rep.           2013           4.284\n",
+       "Zambia                2013           5.429\n",
+       "Zimbabwe              2013           3.977"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = wb.download(indicator='SP.DYN.TFRT.IN', country='all', start=2013, end=2013)\n",
+    "df.tail()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Notice that selecting *all* countries also pulls indicators back for different regional groupings as well as countries."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## An example with some modeling"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Suppose you want to compare GDP to the share of people with cellphone contracts around the world."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>name</th>\n",
+       "      <th>source</th>\n",
+       "      <th>sourceNote</th>\n",
+       "      <th>sourceOrganization</th>\n",
+       "      <th>topics</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>5948</th>\n",
+       "      <td>IT.MOB.COV.ZS</td>\n",
+       "      <td>Population coverage of mobile cellular telephony (%)</td>\n",
+       "      <td>Africa Development Indicators</td>\n",
+       "      <td>Please cite the International Telecommunication Union for third-party use of these data.  Percentage of population covered by mobile cellular telephony refers to the percentage of a country’s inha...</td>\n",
+       "      <td>International Telecommunication Union, World Telecommunication Development Report and database, and World Bank estimates.</td>\n",
+       "      <td></td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                 id                                                  name  \\\n",
+       "5948  IT.MOB.COV.ZS  Population coverage of mobile cellular telephony (%)   \n",
+       "\n",
+       "                             source  \\\n",
+       "5948  Africa Development Indicators   \n",
+       "\n",
+       "                                                                                                                                                                                                   sourceNote  \\\n",
+       "5948  Please cite the International Telecommunication Union for third-party use of these data.  Percentage of population covered by mobile cellular telephony refers to the percentage of a country’s inha...   \n",
+       "\n",
+       "                                                                                                             sourceOrganization  \\\n",
+       "5948  International Telecommunication Union, World Telecommunication Development Report and database, and World Bank estimates.   \n",
+       "\n",
+       "     topics  \n",
+       "5948         "
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "wb.search('cell.*%')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's choose `IT.MOB.COV.ZS` to compare to GDP (`NY.GDP.PCAP.KD`)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>gdp</th>\n",
+       "      <th>cellphone</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>country</th>\n",
+       "      <th>year</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Benin</th>\n",
+       "      <th>2011</th>\n",
+       "      <td>733.864893</td>\n",
+       "      <td>99.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Botswana</th>\n",
+       "      <th>2011</th>\n",
+       "      <td>6488.966235</td>\n",
+       "      <td>96.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Central African Republic</th>\n",
+       "      <th>2011</th>\n",
+       "      <td>452.794425</td>\n",
+       "      <td>56.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Chad</th>\n",
+       "      <th>2011</th>\n",
+       "      <td>867.303098</td>\n",
+       "      <td>75.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Congo, Dem. Rep.</th>\n",
+       "      <th>2011</th>\n",
+       "      <td>322.117465</td>\n",
+       "      <td>50.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                       gdp  cellphone\n",
+       "country                  year                        \n",
+       "Benin                    2011   733.864893       99.0\n",
+       "Botswana                 2011  6488.966235       96.0\n",
+       "Central African Republic 2011   452.794425       56.0\n",
+       "Chad                     2011   867.303098       75.0\n",
+       "Congo, Dem. Rep.         2011   322.117465       50.0"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "ind = ['NY.GDP.PCAP.KD', 'IT.MOB.COV.ZS']\n",
+    "df = wb.download(indicator=ind, country='all', start=2011, end=2011).dropna()\n",
+    "df.columns = ['gdp', 'cellphone']\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "MultiIndex: 30 entries, (Benin, 2011) to (Zimbabwe, 2011)\n",
+      "Data columns (total 2 columns):\n",
+      "gdp          30 non-null float64\n",
+      "cellphone    30 non-null float64\n",
+      "dtypes: float64(2)\n",
+      "memory usage: 720.0+ bytes\n"
+     ]
+    }
+   ],
+   "source": [
+    "df.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Finally, we'll use the `statsmodels` package to assess the relationship between our two variables using ordinary least squares regression."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<table class=\"simpletable\">\n",
+       "<caption>OLS Regression Results</caption>\n",
+       "<tr>\n",
+       "  <th>Dep. Variable:</th>        <td>cellphone</td>    <th>  R-squared:         </th> <td>   0.323</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Model:</th>                   <td>OLS</td>       <th>  Adj. R-squared:    </th> <td>   0.299</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Method:</th>             <td>Least Squares</td>  <th>  F-statistic:       </th> <td>   13.38</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Date:</th>             <td>Fri, 17 Feb 2017</td> <th>  Prob (F-statistic):</th>  <td>0.00104</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Time:</th>                 <td>21:00:53</td>     <th>  Log-Likelihood:    </th> <td> -127.20</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>No. Observations:</th>      <td>    30</td>      <th>  AIC:               </th> <td>   258.4</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Df Residuals:</th>          <td>    28</td>      <th>  BIC:               </th> <td>   261.2</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Df Model:</th>              <td>     1</td>      <th>                     </th>     <td> </td>   \n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Covariance Type:</th>      <td>nonrobust</td>    <th>                     </th>     <td> </td>   \n",
+       "</tr>\n",
+       "</table>\n",
+       "<table class=\"simpletable\">\n",
+       "<tr>\n",
+       "       <td></td>          <th>coef</th>     <th>std err</th>      <th>t</th>      <th>P>|t|</th> <th>[95.0% Conf. Int.]</th> \n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Intercept</th>   <td>   -2.1117</td> <td>   23.866</td> <td>   -0.088</td> <td> 0.930</td> <td>  -50.999    46.775</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>np.log(gdp)</th> <td>   11.9623</td> <td>    3.271</td> <td>    3.657</td> <td> 0.001</td> <td>    5.262    18.662</td>\n",
+       "</tr>\n",
+       "</table>\n",
+       "<table class=\"simpletable\">\n",
+       "<tr>\n",
+       "  <th>Omnibus:</th>       <td>27.980</td> <th>  Durbin-Watson:     </th> <td>   2.062</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Prob(Omnibus):</th> <td> 0.000</td> <th>  Jarque-Bera (JB):  </th> <td>  64.430</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Skew:</th>          <td>-1.942</td> <th>  Prob(JB):          </th> <td>1.02e-14</td>\n",
+       "</tr>\n",
+       "<tr>\n",
+       "  <th>Kurtosis:</th>      <td> 9.038</td> <th>  Cond. No.          </th> <td>    55.9</td>\n",
+       "</tr>\n",
+       "</table>"
+      ],
+      "text/plain": [
+       "<class 'statsmodels.iolib.summary.Summary'>\n",
+       "\"\"\"\n",
+       "                            OLS Regression Results                            \n",
+       "==============================================================================\n",
+       "Dep. Variable:              cellphone   R-squared:                       0.323\n",
+       "Model:                            OLS   Adj. R-squared:                  0.299\n",
+       "Method:                 Least Squares   F-statistic:                     13.38\n",
+       "Date:                Fri, 17 Feb 2017   Prob (F-statistic):            0.00104\n",
+       "Time:                        21:00:53   Log-Likelihood:                -127.20\n",
+       "No. Observations:                  30   AIC:                             258.4\n",
+       "Df Residuals:                      28   BIC:                             261.2\n",
+       "Df Model:                           1                                         \n",
+       "Covariance Type:            nonrobust                                         \n",
+       "===============================================================================\n",
+       "                  coef    std err          t      P>|t|      [95.0% Conf. Int.]\n",
+       "-------------------------------------------------------------------------------\n",
+       "Intercept      -2.1117     23.866     -0.088      0.930       -50.999    46.775\n",
+       "np.log(gdp)    11.9623      3.271      3.657      0.001         5.262    18.662\n",
+       "==============================================================================\n",
+       "Omnibus:                       27.980   Durbin-Watson:                   2.062\n",
+       "Prob(Omnibus):                  0.000   Jarque-Bera (JB):               64.430\n",
+       "Skew:                          -1.942   Prob(JB):                     1.02e-14\n",
+       "Kurtosis:                       9.038   Cond. No.                         55.9\n",
+       "==============================================================================\n",
+       "\n",
+       "Warnings:\n",
+       "[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.\n",
+       "\"\"\""
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "import statsmodels.formula.api as smf\n",
+    "mod = smf.ols(\"cellphone ~ np.log(gdp)\", df).fit()\n",
+    "mod.summary()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Unsurprisingly, populations in rich countries tend to use cellphones at a higher rate."
+   ]
+  }
+ ],
+ "metadata": {
+  "anaconda-cloud": {},
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

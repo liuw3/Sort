@@ -1,0 +1,1954 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Wrangling for Tidy Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "> 80% of the effort in data analysis is spent cleaning data ([Hadley Wickham](http://vita.had.co.nz/papers/tidy-data.pdf))\n",
+    "\n",
+    "The work required to make your dataset easy to analyze.\n",
+    "\n",
+    "- Easy to use column names\n",
+    "- Fixing inconsistent variables\n",
+    "- Merging with other datasets\n",
+    "- Reshaping (melt, pivot, ect..)\n",
+    "- Dealing with missing values\n",
+    "\n",
+    "## Tidy data\n",
+    "\n",
+    "- [Hadley's paper](http://vita.had.co.nz/papers/tidy-data.pdf)\n",
+    "- [Lecture for R users](http://vita.had.co.nz/papers/tidy-data-pres.pdf)\n",
+    "\n",
+    "General Idea:\n",
+    "\n",
+    "- Each variable forms a column\n",
+    "- Each row is an observation\n",
+    "- Each table stores a single type of observation type\n",
+    "\n",
+    "> A general rule of thumb is that it is easier describe a functional relationships between columns (variables) than between rows, and it is easier to make comparisions between groups of rows (observations) than between columns.  -- Hadley, Tidy Data\n",
+    "\n",
+    "**Argument**: Tidy data makes it easier to *manipulate*, *visualize*, and *model* your data."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Example\n",
+    "\n",
+    "Taken from [Hadley's paper](http://vita.had.co.nz/papers/tidy-data.pdf)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "     A  B          name\n",
+      "0  NaN  5    John Smith\n",
+      "1  1.0  4      Jane Doe\n",
+      "2  2.0  3  Mary Johnson\n"
+     ]
+    }
+   ],
+   "source": [
+    "names = ['John Smith','Jane Doe','Mary Johnson']\n",
+    "treatmentA = [None,1,2]\n",
+    "treatmentB = [5,4,3]\n",
+    "\n",
+    "messy = pd.DataFrame({'name': names, 'A': treatmentA, 'B': treatmentB})\n",
+    "print messy"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "What are the variables in this experiment?\n",
+    "\n",
+    "What are the observations?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>name</th>\n",
+       "      <th>variable</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>John Smith</td>\n",
+       "      <td>A</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Jane Doe</td>\n",
+       "      <td>A</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Mary Johnson</td>\n",
+       "      <td>A</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>John Smith</td>\n",
+       "      <td>B</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Jane Doe</td>\n",
+       "      <td>B</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>Mary Johnson</td>\n",
+       "      <td>B</td>\n",
+       "      <td>3.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "           name variable  value\n",
+       "0    John Smith        A    NaN\n",
+       "1      Jane Doe        A    1.0\n",
+       "2  Mary Johnson        A    2.0\n",
+       "3    John Smith        B    5.0\n",
+       "4      Jane Doe        B    4.0\n",
+       "5  Mary Johnson        B    3.0"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tidy = pd.melt(messy, id_vars=['name'])\n",
+    "tidy"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>name</th>\n",
+       "      <th>treatment</th>\n",
+       "      <th>result</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>John Smith</td>\n",
+       "      <td>A</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Jane Doe</td>\n",
+       "      <td>A</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Mary Johnson</td>\n",
+       "      <td>A</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>John Smith</td>\n",
+       "      <td>B</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Jane Doe</td>\n",
+       "      <td>B</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>Mary Johnson</td>\n",
+       "      <td>B</td>\n",
+       "      <td>3.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "           name treatment  result\n",
+       "0    John Smith         A     NaN\n",
+       "1      Jane Doe         A     1.0\n",
+       "2  Mary Johnson         A     2.0\n",
+       "3    John Smith         B     5.0\n",
+       "4      Jane Doe         B     4.0\n",
+       "5  Mary Johnson         B     3.0"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tidy.columns = ['name','treatment','result']\n",
+    "tidy"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## \"Unpivoting\" data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "A common type of messy dataset is tabular data designed for presentation, where variables form both the rows and columns, and column headers are values, not variable names. While we would call this arrangement messy, in some cases it can be extremely useful.\n",
+    "\n",
+    "For example, the [World Bank](http://data.worldbank.org/indicator/SP.DYN.LE00.IN) usually provides CSV / XLS access to  data in “pivoted” or “normalized” form so they look like this:\n",
+    "\n",
+    "### Pivoted data \n",
+    "<img src=\"Pivoted.png\">\n",
+    "\n",
+    "But for a lot analyses and applications, particularly data visualisation tools like D3, ggplot2, Tableau, it’s more convenient to have your data “unpivoted” or “denormalized” so it looks like this:\n",
+    "\n",
+    "### Unpivoted data\n",
+    "<img src=\"Unpivoted.png\">\n",
+    "\n",
+    "This is consistent with creating Tidy Data. Each variable forms a column, and each row is an observation. We want to “unpivot” or “denormalize” the data - in effect, to transpose columns to rows and have one complete record per row."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The pivoted format is often referred to as \"wide,\" while the unpivoted format is called \"long\" or \"tall\" or \"stacked.\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Preparing Excel Files\n",
+    "\n",
+    "Tableau also provides a good tutorial about [\"Preparing Excel Files for Analysis\"](http://kb.tableausoftware.com/articles/knowledgebase/preparing-excel-files-analysis). That tutorial includes good general information about cleaning Excel files."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Unpivoting with Excel (Windows only)\n",
+    "\n",
+    "For Windows PCs, there is a convenient and free [Tableau Excel add-in](http://kb.tableausoftware.com/articles/knowledgebase/addin-reshaping-data-excel) or reshaping data. \n",
+    "\n",
+    "This approach is fine if you have Windows and Excel and are working on one file at a time, but many of us don’t use these tools and want tools that fit our own workflows better."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Unpivoting with Pandas\n",
+    "\n",
+    "A good way to achieve the desired result in Pandas is to use the “melt” function (seen briefly above). It is very similar to the \"melt\" function in the R reshape library that Hadley Wickham created for Tidy Data."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's use the full [dataset](http://data.worldbank.org/indicator/SP.DYN.LE00.IN) about life expectancy from birth from the World Bank. (Note that I cleaned it up a bit after the initial download. I removed two \"title\" rows and two unhelpful columns.)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "df = pd.read_csv('LifeExpectancy.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 248 entries, 0 to 247\n",
+      "Data columns (total 57 columns):\n",
+      "Country Name    248 non-null object\n",
+      "Country Code    247 non-null object\n",
+      "1960            222 non-null float64\n",
+      "1961            223 non-null float64\n",
+      "1962            223 non-null float64\n",
+      "1963            222 non-null float64\n",
+      "1964            222 non-null float64\n",
+      "1965            223 non-null float64\n",
+      "1966            223 non-null float64\n",
+      "1967            223 non-null float64\n",
+      "1968            223 non-null float64\n",
+      "1969            223 non-null float64\n",
+      "1970            224 non-null float64\n",
+      "1971            223 non-null float64\n",
+      "1972            223 non-null float64\n",
+      "1973            224 non-null float64\n",
+      "1974            223 non-null float64\n",
+      "1975            223 non-null float64\n",
+      "1976            223 non-null float64\n",
+      "1977            223 non-null float64\n",
+      "1978            225 non-null float64\n",
+      "1979            224 non-null float64\n",
+      "1980            225 non-null float64\n",
+      "1981            225 non-null float64\n",
+      "1982            229 non-null float64\n",
+      "1983            227 non-null float64\n",
+      "1984            227 non-null float64\n",
+      "1985            227 non-null float64\n",
+      "1986            227 non-null float64\n",
+      "1987            231 non-null float64\n",
+      "1988            227 non-null float64\n",
+      "1989            227 non-null float64\n",
+      "1990            229 non-null float64\n",
+      "1991            230 non-null float64\n",
+      "1992            231 non-null float64\n",
+      "1993            228 non-null float64\n",
+      "1994            230 non-null float64\n",
+      "1995            230 non-null float64\n",
+      "1996            230 non-null float64\n",
+      "1997            234 non-null float64\n",
+      "1998            230 non-null float64\n",
+      "1999            231 non-null float64\n",
+      "2000            234 non-null float64\n",
+      "2001            232 non-null float64\n",
+      "2002            236 non-null float64\n",
+      "2003            233 non-null float64\n",
+      "2004            233 non-null float64\n",
+      "2005            234 non-null float64\n",
+      "2006            234 non-null float64\n",
+      "2007            235 non-null float64\n",
+      "2008            235 non-null float64\n",
+      "2009            235 non-null float64\n",
+      "2010            233 non-null float64\n",
+      "2011            233 non-null float64\n",
+      "2012            231 non-null float64\n",
+      "2013            0 non-null float64\n",
+      "2014            0 non-null float64\n",
+      "dtypes: float64(55), object(2)\n",
+      "memory usage: 110.5+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "df.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Country Name</th>\n",
+       "      <th>Country Code</th>\n",
+       "      <th>1960</th>\n",
+       "      <th>1961</th>\n",
+       "      <th>1962</th>\n",
+       "      <th>1963</th>\n",
+       "      <th>1964</th>\n",
+       "      <th>1965</th>\n",
+       "      <th>1966</th>\n",
+       "      <th>1967</th>\n",
+       "      <th>...</th>\n",
+       "      <th>2005</th>\n",
+       "      <th>2006</th>\n",
+       "      <th>2007</th>\n",
+       "      <th>2008</th>\n",
+       "      <th>2009</th>\n",
+       "      <th>2010</th>\n",
+       "      <th>2011</th>\n",
+       "      <th>2012</th>\n",
+       "      <th>2013</th>\n",
+       "      <th>2014</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Aruba</td>\n",
+       "      <td>ABW</td>\n",
+       "      <td>65.569366</td>\n",
+       "      <td>65.988024</td>\n",
+       "      <td>66.365537</td>\n",
+       "      <td>66.713976</td>\n",
+       "      <td>67.044293</td>\n",
+       "      <td>67.369756</td>\n",
+       "      <td>67.699000</td>\n",
+       "      <td>68.034683</td>\n",
+       "      <td>...</td>\n",
+       "      <td>74.228073</td>\n",
+       "      <td>74.375707</td>\n",
+       "      <td>74.526244</td>\n",
+       "      <td>74.674220</td>\n",
+       "      <td>74.816146</td>\n",
+       "      <td>74.952024</td>\n",
+       "      <td>75.080390</td>\n",
+       "      <td>75.206756</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Andorra</td>\n",
+       "      <td>AND</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>31.580049</td>\n",
+       "      <td>32.095976</td>\n",
+       "      <td>32.611878</td>\n",
+       "      <td>33.127317</td>\n",
+       "      <td>33.641244</td>\n",
+       "      <td>34.153683</td>\n",
+       "      <td>34.663122</td>\n",
+       "      <td>35.170073</td>\n",
+       "      <td>...</td>\n",
+       "      <td>57.058439</td>\n",
+       "      <td>57.570659</td>\n",
+       "      <td>58.091366</td>\n",
+       "      <td>58.607098</td>\n",
+       "      <td>59.112341</td>\n",
+       "      <td>59.600098</td>\n",
+       "      <td>60.065366</td>\n",
+       "      <td>60.509122</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Angola</td>\n",
+       "      <td>AGO</td>\n",
+       "      <td>32.984829</td>\n",
+       "      <td>33.386220</td>\n",
+       "      <td>33.787585</td>\n",
+       "      <td>34.188463</td>\n",
+       "      <td>34.590341</td>\n",
+       "      <td>34.992220</td>\n",
+       "      <td>35.395098</td>\n",
+       "      <td>35.799976</td>\n",
+       "      <td>...</td>\n",
+       "      <td>48.538805</td>\n",
+       "      <td>49.007049</td>\n",
+       "      <td>49.435732</td>\n",
+       "      <td>49.847390</td>\n",
+       "      <td>50.251024</td>\n",
+       "      <td>50.654171</td>\n",
+       "      <td>51.059317</td>\n",
+       "      <td>51.464000</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Albania</td>\n",
+       "      <td>ALB</td>\n",
+       "      <td>62.254366</td>\n",
+       "      <td>63.273463</td>\n",
+       "      <td>64.162854</td>\n",
+       "      <td>64.887098</td>\n",
+       "      <td>65.438195</td>\n",
+       "      <td>65.827390</td>\n",
+       "      <td>66.089317</td>\n",
+       "      <td>66.287220</td>\n",
+       "      <td>...</td>\n",
+       "      <td>76.089390</td>\n",
+       "      <td>76.290537</td>\n",
+       "      <td>76.464854</td>\n",
+       "      <td>76.632317</td>\n",
+       "      <td>76.801878</td>\n",
+       "      <td>76.978512</td>\n",
+       "      <td>77.163220</td>\n",
+       "      <td>77.350463</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 57 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  Country Name Country Code       1960       1961       1962       1963  \\\n",
+       "0        Aruba          ABW  65.569366  65.988024  66.365537  66.713976   \n",
+       "1      Andorra          AND        NaN        NaN        NaN        NaN   \n",
+       "2  Afghanistan          AFG  31.580049  32.095976  32.611878  33.127317   \n",
+       "3       Angola          AGO  32.984829  33.386220  33.787585  34.188463   \n",
+       "4      Albania          ALB  62.254366  63.273463  64.162854  64.887098   \n",
+       "\n",
+       "        1964       1965       1966       1967  ...        2005       2006  \\\n",
+       "0  67.044293  67.369756  67.699000  68.034683  ...   74.228073  74.375707   \n",
+       "1        NaN        NaN        NaN        NaN  ...         NaN        NaN   \n",
+       "2  33.641244  34.153683  34.663122  35.170073  ...   57.058439  57.570659   \n",
+       "3  34.590341  34.992220  35.395098  35.799976  ...   48.538805  49.007049   \n",
+       "4  65.438195  65.827390  66.089317  66.287220  ...   76.089390  76.290537   \n",
+       "\n",
+       "        2007       2008       2009       2010       2011       2012  2013  \\\n",
+       "0  74.526244  74.674220  74.816146  74.952024  75.080390  75.206756   NaN   \n",
+       "1        NaN        NaN        NaN        NaN        NaN        NaN   NaN   \n",
+       "2  58.091366  58.607098  59.112341  59.600098  60.065366  60.509122   NaN   \n",
+       "3  49.435732  49.847390  50.251024  50.654171  51.059317  51.464000   NaN   \n",
+       "4  76.464854  76.632317  76.801878  76.978512  77.163220  77.350463   NaN   \n",
+       "\n",
+       "   2014  \n",
+       "0   NaN  \n",
+       "1   NaN  \n",
+       "2   NaN  \n",
+       "3   NaN  \n",
+       "4   NaN  \n",
+       "\n",
+       "[5 rows x 57 columns]"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now `melt` the normalized file, hold the country name and code variables, and rename the melted columns."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "le = pd.melt(df, id_vars=['Country Name','Country Code'], var_name=\"year\", value_name=\"life_expectancy\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 13640 entries, 0 to 13639\n",
+      "Data columns (total 4 columns):\n",
+      "Country Name       13640 non-null object\n",
+      "Country Code       13585 non-null object\n",
+      "year               13640 non-null object\n",
+      "life_expectancy    12075 non-null float64\n",
+      "dtypes: float64(1), object(3)\n",
+      "memory usage: 426.3+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "le.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Country Name</th>\n",
+       "      <th>Country Code</th>\n",
+       "      <th>year</th>\n",
+       "      <th>life_expectancy</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Aruba</td>\n",
+       "      <td>ABW</td>\n",
+       "      <td>1960</td>\n",
+       "      <td>65.569366</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Andorra</td>\n",
+       "      <td>AND</td>\n",
+       "      <td>1960</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>1960</td>\n",
+       "      <td>31.580049</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Angola</td>\n",
+       "      <td>AGO</td>\n",
+       "      <td>1960</td>\n",
+       "      <td>32.984829</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Albania</td>\n",
+       "      <td>ALB</td>\n",
+       "      <td>1960</td>\n",
+       "      <td>62.254366</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  Country Name Country Code  year  life_expectancy\n",
+       "0        Aruba          ABW  1960        65.569366\n",
+       "1      Andorra          AND  1960              NaN\n",
+       "2  Afghanistan          AFG  1960        31.580049\n",
+       "3       Angola          AGO  1960        32.984829\n",
+       "4      Albania          ALB  1960        62.254366"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "le.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Country Name</th>\n",
+       "      <th>Country Code</th>\n",
+       "      <th>year</th>\n",
+       "      <th>life_expectancy</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>13635</th>\n",
+       "      <td>Yemen, Rep.</td>\n",
+       "      <td>YEM</td>\n",
+       "      <td>2014</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13636</th>\n",
+       "      <td>South Africa</td>\n",
+       "      <td>ZAF</td>\n",
+       "      <td>2014</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13637</th>\n",
+       "      <td>Congo, Dem. Rep.</td>\n",
+       "      <td>COD</td>\n",
+       "      <td>2014</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13638</th>\n",
+       "      <td>Zambia</td>\n",
+       "      <td>ZMB</td>\n",
+       "      <td>2014</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13639</th>\n",
+       "      <td>Zimbabwe</td>\n",
+       "      <td>ZWE</td>\n",
+       "      <td>2014</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "           Country Name Country Code  year  life_expectancy\n",
+       "13635       Yemen, Rep.          YEM  2014              NaN\n",
+       "13636      South Africa          ZAF  2014              NaN\n",
+       "13637  Congo, Dem. Rep.          COD  2014              NaN\n",
+       "13638            Zambia          ZMB  2014              NaN\n",
+       "13639          Zimbabwe          ZWE  2014              NaN"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "le.tail()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Sort by `Country Name` for convenience."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "le =  le.sort_values(['Country Name'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Country Name</th>\n",
+       "      <th>Country Code</th>\n",
+       "      <th>year</th>\n",
+       "      <th>life_expectancy</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>3722</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>38.970268</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1242</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>1965</td>\n",
+       "      <td>34.153683</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11658</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>2007</td>\n",
+       "      <td>58.091366</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>746</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>1963</td>\n",
+       "      <td>33.127317</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5954</th>\n",
+       "      <td>Afghanistan</td>\n",
+       "      <td>AFG</td>\n",
+       "      <td>1984</td>\n",
+       "      <td>43.644488</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      Country Name Country Code  year  life_expectancy\n",
+       "3722   Afghanistan          AFG  1975        38.970268\n",
+       "1242   Afghanistan          AFG  1965        34.153683\n",
+       "11658  Afghanistan          AFG  2007        58.091366\n",
+       "746    Afghanistan          AFG  1963        33.127317\n",
+       "5954   Afghanistan          AFG  1984        43.644488"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "le.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>Country Name</th>\n",
+       "      <th>Country Code</th>\n",
+       "      <th>year</th>\n",
+       "      <th>life_expectancy</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>8183</th>\n",
+       "      <td>Zimbabwe</td>\n",
+       "      <td>ZWE</td>\n",
+       "      <td>1992</td>\n",
+       "      <td>56.544220</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7191</th>\n",
+       "      <td>Zimbabwe</td>\n",
+       "      <td>ZWE</td>\n",
+       "      <td>1988</td>\n",
+       "      <td>60.674488</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3223</th>\n",
+       "      <td>Zimbabwe</td>\n",
+       "      <td>ZWE</td>\n",
+       "      <td>1972</td>\n",
+       "      <td>55.566610</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1239</th>\n",
+       "      <td>Zimbabwe</td>\n",
+       "      <td>ZWE</td>\n",
+       "      <td>1964</td>\n",
+       "      <td>52.971659</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13639</th>\n",
+       "      <td>Zimbabwe</td>\n",
+       "      <td>ZWE</td>\n",
+       "      <td>2014</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      Country Name Country Code  year  life_expectancy\n",
+       "8183      Zimbabwe          ZWE  1992        56.544220\n",
+       "7191      Zimbabwe          ZWE  1988        60.674488\n",
+       "3223      Zimbabwe          ZWE  1972        55.566610\n",
+       "1239      Zimbabwe          ZWE  1964        52.971659\n",
+       "13639     Zimbabwe          ZWE  2014              NaN"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "le.tail()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Save the Tidy Data version\n",
+    "\n",
+    "(Saving without an index)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "le.to_csv('LifeExpectancy-Tidy.csv', sep=',', index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2009-10_Class_Size_-_School-level_Detail.csv\r\n",
+      "311-service-requests.csv\r\n",
+      "Cleaning Up Messy Data.ipynb\r\n",
+      "Combining Excel Files.ipynb\r\n",
+      "Excel-File-Processing-pandas.png\r\n",
+      "Excel-File-Processing.png\r\n",
+      "LifeExpectancy-Tidy.csv\r\n",
+      "LifeExpectancy.csv\r\n",
+      "Munging the Titanic.ipynb\r\n",
+      "NYC School Data.ipynb\r\n",
+      "Pivoted.png\r\n",
+      "Reshaping with Pandas.ipynb\r\n",
+      "Rubric for Wrangling.ipynb\r\n",
+      "SAT__College_Board__2010_School_Level_Results.csv\r\n",
+      "School_Attendance_and_Enrollment_Statistics_by_District__2010-11_.csv\r\n",
+      "School_District_Breakdowns.csv\r\n",
+      "School_Progress_Reports_-_All_Schools_-_2009-10.csv\r\n",
+      "Unpivoted.png\r\n",
+      "Wrangling for Tidy Data.ipynb\r\n",
+      "Wrangling with Pandas.ipynb\r\n",
+      "cameras.csv\r\n",
+      "customer-status.xlsx\r\n",
+      "\u001b[34mdata\u001b[m\u001b[m\r\n",
+      "imdb_top_10000.txt\r\n",
+      "movies.dat\r\n",
+      "ratings.dat\r\n",
+      "sales-feb-2014.xlsx\r\n",
+      "sales-jan-2014.xlsx\r\n",
+      "sales-mar-2014.xlsx\r\n",
+      "train.csv\r\n",
+      "users.dat\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!ls"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Speed Camera data example\n",
+    "\n",
+    "From Jeff Leek's [Data Analysis Course](https://github.com/jtleek/dataanalysis)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[Open Baltimore](https://data.baltimorecity.gov) provides free public access to information about speed cameras (and many other things). Let's look at data from [here](https://data.baltimorecity.gov/Transportation/Baltimore-Fixed-Speed-Cameras/dz54-2aru)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "While I have downloaded the dataset as '`cameras.csv`' and made it available for class, it is also possible to access it directly from the Web site. We call this \"scraping.\" We'll do more Web scraping next week."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "url = 'https://data.baltimorecity.gov/api/views/dz54-2aru/rows.csv?accessType=DOWNLOAD'\n",
+    "cameras = pd.read_csv(url)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>address</th>\n",
+       "      <th>direction</th>\n",
+       "      <th>street</th>\n",
+       "      <th>crossStreet</th>\n",
+       "      <th>intersection</th>\n",
+       "      <th>Location 1</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>N/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693779962, -76.6688185297)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693157898, -76.6689698176)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>WILKENS AVE &amp; PINE HEIGHTS AVE</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>Wilkens Ave</td>\n",
+       "      <td>Pine Heights</td>\n",
+       "      <td>Wilkens Ave &amp; Pine Heights</td>\n",
+       "      <td>(39.2720252302, -76.676960806)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>THE ALAMEDA &amp; E 33RD ST</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>33rd St</td>\n",
+       "      <td>The Alameda  &amp; 33rd St</td>\n",
+       "      <td>(39.3285013141, -76.5953545714)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>E 33RD ST &amp; THE ALAMEDA</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>E 33rd</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>E 33rd  &amp; The Alameda</td>\n",
+       "      <td>(39.3283410623, -76.5953594625)</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                          address direction       street   crossStreet  \\\n",
+       "0        S CATON AVE & BENSON AVE       N/B    Caton Ave    Benson Ave   \n",
+       "1        S CATON AVE & BENSON AVE       S/B    Caton Ave    Benson Ave   \n",
+       "2  WILKENS AVE & PINE HEIGHTS AVE       E/B  Wilkens Ave  Pine Heights   \n",
+       "3         THE ALAMEDA & E 33RD ST       S/B  The Alameda       33rd St   \n",
+       "4         E 33RD ST & THE ALAMEDA       E/B       E 33rd   The Alameda   \n",
+       "\n",
+       "                 intersection                       Location 1  \n",
+       "0      Caton Ave & Benson Ave  (39.2693779962, -76.6688185297)  \n",
+       "1      Caton Ave & Benson Ave  (39.2693157898, -76.6689698176)  \n",
+       "2  Wilkens Ave & Pine Heights   (39.2720252302, -76.676960806)  \n",
+       "3      The Alameda  & 33rd St  (39.3285013141, -76.5953545714)  \n",
+       "4       E 33rd  & The Alameda  (39.3283410623, -76.5953594625)  "
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cameras.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If, for some reason, that doesn't work, just uncomment the lines below to read the file."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>address</th>\n",
+       "      <th>direction</th>\n",
+       "      <th>street</th>\n",
+       "      <th>crossStreet</th>\n",
+       "      <th>intersection</th>\n",
+       "      <th>Location 1</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>N/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693779962, -76.6688185297)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693157898, -76.6689698176)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>WILKENS AVE &amp; PINE HEIGHTS AVE</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>Wilkens Ave</td>\n",
+       "      <td>Pine Heights</td>\n",
+       "      <td>Wilkens Ave &amp; Pine Heights</td>\n",
+       "      <td>(39.2720252302, -76.676960806)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>THE ALAMEDA &amp; E 33RD ST</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>33rd St</td>\n",
+       "      <td>The Alameda  &amp; 33rd St</td>\n",
+       "      <td>(39.3285013141, -76.5953545714)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>E 33RD ST &amp; THE ALAMEDA</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>E 33rd</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>E 33rd  &amp; The Alameda</td>\n",
+       "      <td>(39.3283410623, -76.5953594625)</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                          address direction       street   crossStreet  \\\n",
+       "0        S CATON AVE & BENSON AVE       N/B    Caton Ave    Benson Ave   \n",
+       "1        S CATON AVE & BENSON AVE       S/B    Caton Ave    Benson Ave   \n",
+       "2  WILKENS AVE & PINE HEIGHTS AVE       E/B  Wilkens Ave  Pine Heights   \n",
+       "3         THE ALAMEDA & E 33RD ST       S/B  The Alameda       33rd St   \n",
+       "4         E 33RD ST & THE ALAMEDA       E/B       E 33rd   The Alameda   \n",
+       "\n",
+       "                 intersection                       Location 1  \n",
+       "0      Caton Ave & Benson Ave  (39.2693779962, -76.6688185297)  \n",
+       "1      Caton Ave & Benson Ave  (39.2693157898, -76.6689698176)  \n",
+       "2  Wilkens Ave & Pine Heights   (39.2720252302, -76.676960806)  \n",
+       "3      The Alameda  & 33rd St  (39.3285013141, -76.5953545714)  \n",
+       "4       E 33rd  & The Alameda  (39.3283410623, -76.5953594625)  "
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cameras = pd.read_csv('cameras.csv')\n",
+    "cameras.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's make the columns more standard."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index([u'address', u'direction', u'street', u'crossStreet', u'intersection',\n",
+       "       u'Location 1'],\n",
+       "      dtype='object')"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cameras.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['address', 'direction', 'street', 'crossstreet', 'intersection', 'location 1']"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_names = [ x.lower() for x in cameras.columns ]\n",
+    "new_names"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['address', 'direction', 'street', 'crossstreet', 'intersection', 'location']"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_names = [ x.lower().split()[0] for x in cameras.columns ]\n",
+    "new_names"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Putting it all together..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>address</th>\n",
+       "      <th>direction</th>\n",
+       "      <th>street</th>\n",
+       "      <th>crossstreet</th>\n",
+       "      <th>intersection</th>\n",
+       "      <th>location</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>N/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693779962, -76.6688185297)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693157898, -76.6689698176)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>WILKENS AVE &amp; PINE HEIGHTS AVE</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>Wilkens Ave</td>\n",
+       "      <td>Pine Heights</td>\n",
+       "      <td>Wilkens Ave &amp; Pine Heights</td>\n",
+       "      <td>(39.2720252302, -76.676960806)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>THE ALAMEDA &amp; E 33RD ST</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>33rd St</td>\n",
+       "      <td>The Alameda  &amp; 33rd St</td>\n",
+       "      <td>(39.3285013141, -76.5953545714)</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>E 33RD ST &amp; THE ALAMEDA</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>E 33rd</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>E 33rd  &amp; The Alameda</td>\n",
+       "      <td>(39.3283410623, -76.5953594625)</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                          address direction       street   crossstreet  \\\n",
+       "0        S CATON AVE & BENSON AVE       N/B    Caton Ave    Benson Ave   \n",
+       "1        S CATON AVE & BENSON AVE       S/B    Caton Ave    Benson Ave   \n",
+       "2  WILKENS AVE & PINE HEIGHTS AVE       E/B  Wilkens Ave  Pine Heights   \n",
+       "3         THE ALAMEDA & E 33RD ST       S/B  The Alameda       33rd St   \n",
+       "4         E 33RD ST & THE ALAMEDA       E/B       E 33rd   The Alameda   \n",
+       "\n",
+       "                 intersection                         location  \n",
+       "0      Caton Ave & Benson Ave  (39.2693779962, -76.6688185297)  \n",
+       "1      Caton Ave & Benson Ave  (39.2693157898, -76.6689698176)  \n",
+       "2  Wilkens Ave & Pine Heights   (39.2720252302, -76.676960806)  \n",
+       "3      The Alameda  & 33rd St  (39.3285013141, -76.5953545714)  \n",
+       "4       E 33rd  & The Alameda  (39.3283410623, -76.5953594625)  "
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cameras.columns = [ x.lower().split()[0] for x in cameras.columns ]\n",
+    "cameras.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### What if we want to split location into latitude and longitude?"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Method one: `map` on location."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def get_lat(x):\n",
+    "    tmp = x.replace('(','')\n",
+    "    tmp = tmp.replace(')','')\n",
+    "    lat = float(tmp.split(',')[0])\n",
+    "    return lat"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0    39.269378\n",
+       "1    39.269316\n",
+       "2    39.272025\n",
+       "3    39.328501\n",
+       "4    39.328341\n",
+       "Name: location, dtype: float64"
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "lat = cameras['location'].map(get_lat)\n",
+    "lat.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'lat' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-9-cc09119c8418>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0mtmp\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mcameras\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mcopy\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m \u001b[0mtmp\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'lat'\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mlat\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m \u001b[0mtmp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhead\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mNameError\u001b[0m: name 'lat' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "tmp = cameras.copy()\n",
+    "tmp['lat'] = lat\n",
+    "tmp.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def rt(x):\n",
+    "    return (1,2,3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "tuple"
+      ]
+     },
+     "execution_count": 28,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tmp['x'] = cameras['location'].map(rt)\n",
+    "type(tmp.ix[0]['x'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Method two: `apply` on the location."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def split_location(x):\n",
+    "    tmp = x.replace('(','')\n",
+    "    tmp = tmp.replace(')','')\n",
+    "    val = pd.Series(tmp.split(',')).astype(np.float)\n",
+    "    return val"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>lat</th>\n",
+       "      <th>long</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>39.269378</td>\n",
+       "      <td>-76.668819</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>39.269316</td>\n",
+       "      <td>-76.668970</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>39.272025</td>\n",
+       "      <td>-76.676961</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>39.328501</td>\n",
+       "      <td>-76.595355</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>39.328341</td>\n",
+       "      <td>-76.595359</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         lat       long\n",
+       "0  39.269378 -76.668819\n",
+       "1  39.269316 -76.668970\n",
+       "2  39.272025 -76.676961\n",
+       "3  39.328501 -76.595355\n",
+       "4  39.328341 -76.595359"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tmp = cameras['location'].apply(split_location)\n",
+    "tmp.columns = ['lat','long']\n",
+    "print type(tmp)\n",
+    "tmp.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Merge them togther."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>address</th>\n",
+       "      <th>direction</th>\n",
+       "      <th>street</th>\n",
+       "      <th>crossstreet</th>\n",
+       "      <th>intersection</th>\n",
+       "      <th>location</th>\n",
+       "      <th>lat</th>\n",
+       "      <th>long</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>N/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693779962, -76.6688185297)</td>\n",
+       "      <td>39.269378</td>\n",
+       "      <td>-76.668819</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>S CATON AVE &amp; BENSON AVE</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave &amp; Benson Ave</td>\n",
+       "      <td>(39.2693157898, -76.6689698176)</td>\n",
+       "      <td>39.269316</td>\n",
+       "      <td>-76.668970</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>WILKENS AVE &amp; PINE HEIGHTS AVE</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>Wilkens Ave</td>\n",
+       "      <td>Pine Heights</td>\n",
+       "      <td>Wilkens Ave &amp; Pine Heights</td>\n",
+       "      <td>(39.2720252302, -76.676960806)</td>\n",
+       "      <td>39.272025</td>\n",
+       "      <td>-76.676961</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>THE ALAMEDA &amp; E 33RD ST</td>\n",
+       "      <td>S/B</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>33rd St</td>\n",
+       "      <td>The Alameda  &amp; 33rd St</td>\n",
+       "      <td>(39.3285013141, -76.5953545714)</td>\n",
+       "      <td>39.328501</td>\n",
+       "      <td>-76.595355</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>E 33RD ST &amp; THE ALAMEDA</td>\n",
+       "      <td>E/B</td>\n",
+       "      <td>E 33rd</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>E 33rd  &amp; The Alameda</td>\n",
+       "      <td>(39.3283410623, -76.5953594625)</td>\n",
+       "      <td>39.328341</td>\n",
+       "      <td>-76.595359</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                          address direction       street   crossstreet  \\\n",
+       "0        S CATON AVE & BENSON AVE       N/B    Caton Ave    Benson Ave   \n",
+       "1        S CATON AVE & BENSON AVE       S/B    Caton Ave    Benson Ave   \n",
+       "2  WILKENS AVE & PINE HEIGHTS AVE       E/B  Wilkens Ave  Pine Heights   \n",
+       "3         THE ALAMEDA & E 33RD ST       S/B  The Alameda       33rd St   \n",
+       "4         E 33RD ST & THE ALAMEDA       E/B       E 33rd   The Alameda   \n",
+       "\n",
+       "                 intersection                         location        lat  \\\n",
+       "0      Caton Ave & Benson Ave  (39.2693779962, -76.6688185297)  39.269378   \n",
+       "1      Caton Ave & Benson Ave  (39.2693157898, -76.6689698176)  39.269316   \n",
+       "2  Wilkens Ave & Pine Heights   (39.2720252302, -76.676960806)  39.272025   \n",
+       "3      The Alameda  & 33rd St  (39.3285013141, -76.5953545714)  39.328501   \n",
+       "4       E 33rd  & The Alameda  (39.3283410623, -76.5953594625)  39.328341   \n",
+       "\n",
+       "        long  \n",
+       "0 -76.668819  \n",
+       "1 -76.668970  \n",
+       "2 -76.676961  \n",
+       "3 -76.595355  \n",
+       "4 -76.595359  "
+      ]
+     },
+     "execution_count": 31,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "final = pd.concat([cameras,tmp], axis=1)\n",
+    "final.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The \"melted\" version looks like this:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>crossstreet</th>\n",
+       "      <th>street</th>\n",
+       "      <th>variable</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>lat</td>\n",
+       "      <td>39.269378</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Benson Ave</td>\n",
+       "      <td>Caton Ave</td>\n",
+       "      <td>lat</td>\n",
+       "      <td>39.269316</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Pine Heights</td>\n",
+       "      <td>Wilkens Ave</td>\n",
+       "      <td>lat</td>\n",
+       "      <td>39.272025</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>33rd St</td>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>lat</td>\n",
+       "      <td>39.328501</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>The Alameda</td>\n",
+       "      <td>E 33rd</td>\n",
+       "      <td>lat</td>\n",
+       "      <td>39.328341</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    crossstreet       street variable      value\n",
+       "0    Benson Ave    Caton Ave      lat  39.269378\n",
+       "1    Benson Ave    Caton Ave      lat  39.269316\n",
+       "2  Pine Heights  Wilkens Ave      lat  39.272025\n",
+       "3       33rd St  The Alameda      lat  39.328501\n",
+       "4   The Alameda       E 33rd      lat  39.328341"
+      ]
+     },
+     "execution_count": 32,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tidy = pd.melt(final[['crossstreet','street','lat','long']], id_vars=['crossstreet','street']).head()\n",
+    "tidy"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "anaconda-cloud": {},
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

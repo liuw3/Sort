@@ -1,0 +1,230 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<twitter.stream.TwitterStream object at 0x1062441d0>\n",
+      "<twitter.api.Twitter object at 0x106244150>\n"
+     ]
+    }
+   ],
+   "source": [
+    "import twitter\n",
+    "\n",
+    "cKey = 'NOd2hARpEBXWC0abHSPyIup9v'\n",
+    "cSecret = 'MeLYJV8LUZSHtHY73O45W7lUuqkTHxwfqE5v4hPrMU1PTzGvI1'\n",
+    "aKey = '832163748097843200-6vFmvRTMrVeRPLf2jh45C1kBGaDYlSE'\n",
+    "aSecret = 'LHW7VI7C96D3MufnMhbEK2E2D8JidOnAbrzcr7cmfn5mM'\n",
+    "\n",
+    "auth = twitter.oauth.OAuth(aKey, aSecret, cKey, cSecret)\n",
+    "\n",
+    "twitter_api = twitter.Twitter(auth=auth)\n",
+    "twitter_stream = twitter.TwitterStream(auth=auth)\n",
+    "\n",
+    "print twitter_stream\n",
+    "print twitter_api"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[]"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_api.statuses.home_timeline()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "100"
+      ]
+     },
+     "execution_count": 38,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_statuses = twitter_api.statuses.user_timeline(screen_name='OregonStateMBA', count=100)\n",
+    "len(twitter_statuses)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "twitter.api.TwitterListResponse"
+      ]
+     },
+     "execution_count": 39,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(twitter_statuses)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{u'contributors': None,\n",
+       " u'coordinates': None,\n",
+       " u'created_at': u'Tue Apr 21 16:14:10 +0000 2015',\n",
+       " u'entities': {u'hashtags': [],\n",
+       "  u'symbols': [],\n",
+       "  u'urls': [{u'display_url': u'bit.ly/1BS9RwL',\n",
+       "    u'expanded_url': u'http://bit.ly/1BS9RwL',\n",
+       "    u'indices': [116, 138],\n",
+       "    u'url': u'http://t.co/opBouPTKzT'}],\n",
+       "  u'user_mentions': [{u'id': 3007116414,\n",
+       "    u'id_str': u'3007116414',\n",
+       "    u'indices': [0, 9],\n",
+       "    u'name': u'BendPoly',\n",
+       "    u'screen_name': u'BendPoly'}]},\n",
+       " u'favorite_count': 1,\n",
+       " u'favorited': False,\n",
+       " u'geo': None,\n",
+       " u'id': 590549093077782528,\n",
+       " u'id_str': u'590549093077782528',\n",
+       " u'in_reply_to_screen_name': u'BendPoly',\n",
+       " u'in_reply_to_status_id': 590540644592050176,\n",
+       " u'in_reply_to_status_id_str': u'590540644592050176',\n",
+       " u'in_reply_to_user_id': 3007116414,\n",
+       " u'in_reply_to_user_id_str': u'3007116414',\n",
+       " u'is_quote_status': False,\n",
+       " u'lang': u'en',\n",
+       " u'place': None,\n",
+       " u'possibly_sensitive': False,\n",
+       " u'retweet_count': 0,\n",
+       " u'retweeted': False,\n",
+       " u'source': u'<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>',\n",
+       " u'text': u'@BendPoly  Sure...happy to spread the word. Could you also mention our MBA in Executive Leadership offered in Bend? http://t.co/opBouPTKzT',\n",
+       " u'truncated': False,\n",
+       " u'user': {u'contributors_enabled': False,\n",
+       "  u'created_at': u'Mon Oct 06 19:33:40 +0000 2014',\n",
+       "  u'default_profile': True,\n",
+       "  u'default_profile_image': False,\n",
+       "  u'description': u'',\n",
+       "  u'entities': {u'description': {u'urls': []}},\n",
+       "  u'favourites_count': 30,\n",
+       "  u'follow_request_sent': False,\n",
+       "  u'followers_count': 294,\n",
+       "  u'following': False,\n",
+       "  u'friends_count': 782,\n",
+       "  u'geo_enabled': True,\n",
+       "  u'has_extended_profile': False,\n",
+       "  u'id': 2842634936,\n",
+       "  u'id_str': u'2842634936',\n",
+       "  u'is_translation_enabled': False,\n",
+       "  u'is_translator': False,\n",
+       "  u'lang': u'en',\n",
+       "  u'listed_count': 10,\n",
+       "  u'location': u'Corvallis, Oregon ',\n",
+       "  u'name': u'Oregon State MBA',\n",
+       "  u'notifications': False,\n",
+       "  u'profile_background_color': u'C0DEED',\n",
+       "  u'profile_background_image_url': u'http://abs.twimg.com/images/themes/theme1/bg.png',\n",
+       "  u'profile_background_image_url_https': u'https://abs.twimg.com/images/themes/theme1/bg.png',\n",
+       "  u'profile_background_tile': False,\n",
+       "  u'profile_banner_url': u'https://pbs.twimg.com/profile_banners/2842634936/1412624550',\n",
+       "  u'profile_image_url': u'http://pbs.twimg.com/profile_images/519210936020631552/pMqLp5u4_normal.jpeg',\n",
+       "  u'profile_image_url_https': u'https://pbs.twimg.com/profile_images/519210936020631552/pMqLp5u4_normal.jpeg',\n",
+       "  u'profile_link_color': u'1DA1F2',\n",
+       "  u'profile_sidebar_border_color': u'C0DEED',\n",
+       "  u'profile_sidebar_fill_color': u'DDEEF6',\n",
+       "  u'profile_text_color': u'333333',\n",
+       "  u'profile_use_background_image': True,\n",
+       "  u'protected': False,\n",
+       "  u'screen_name': u'OregonStateMBA',\n",
+       "  u'statuses_count': 340,\n",
+       "  u'time_zone': None,\n",
+       "  u'translator_type': u'none',\n",
+       "  u'url': None,\n",
+       "  u'utc_offset': None,\n",
+       "  u'verified': False}}"
+      ]
+     },
+     "execution_count": 42,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_statuses[66]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}

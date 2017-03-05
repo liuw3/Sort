@@ -1,0 +1,3980 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Wrangling with Pandas"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "\n",
+    "### The Problem\n",
+    "\n",
+    "> 80% of the effort in data analysis is spent cleaning data. [Hadley Wickham](http://vita.had.co.nz/papers/tidy-data.pdf)\n",
+    "\n",
+    "- Different data formats - often not good for analytics\n",
+    "- [Tidy data](http://vita.had.co.nz/papers/tidy-data.pdf) by Hadley Wickham- \n",
+    "- Raw data is often in the wrong format\n",
+    "- Storage may be best in a different format"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Outline\n",
+    "\n",
+    "**Simple example**\n",
+    "\n",
+    "- Reshaping: `pd.pivot` and `pd.melt`\n",
+    "- Many basic operations: add, remove, indexing\n",
+    "- Missing values\n",
+    "\n",
+    "**Movies**\n",
+    "\n",
+    "- Joining\n",
+    "- Groupby\n",
+    "- Sorting\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "### Simple example\n",
+    "\n",
+    "Based on [Data Wrangling Kung Fu with Pandas](vimeo.com/63295598) by Wes McKinney"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "import pandas as  pd\n",
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**Setup only**: Write some data for reading\n",
+    "\n",
+    "***Note:*** This Jupyter Notebook assumes that you have a subfolder or subdirectory called 'data' available. Be sure to create one before starting. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "dates = ['2014-02-16', '2014-02-17', '2014-02-18', '2014-02-19']\n",
+    "algs = ['Model-A','Model-B','Model-C']\n",
+    "\n",
+    "filename = os.path.join('data','example.csv')\n",
+    "\n",
+    "with open(filename,'w') as outfile:\n",
+    "    outfile.write('date,type,value\\n')\n",
+    "    for d in dates:\n",
+    "        for a in algs:\n",
+    "            v = np.random.randint(10, size=1)[0]\n",
+    "            tmp = '{0},{1},{2}\\n'.format(d,a,v)\n",
+    "            outfile.write(tmp)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "date,type,value\n",
+      "2014-02-16,Model-A,6\n",
+      "2014-02-16,Model-B,6\n",
+      "2014-02-16,Model-C,7\n",
+      "2014-02-17,Model-A,6\n",
+      "2014-02-17,Model-B,2\n",
+      "2014-02-17,Model-C,3\n",
+      "2014-02-18,Model-A,5\n",
+      "2014-02-18,Model-B,7\n",
+      "2014-02-18,Model-C,6\n",
+      "2014-02-19,Model-A,5\n",
+      "2014-02-19,Model-B,4\n",
+      "2014-02-19,Model-C,5\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "with open(filename, 'r') as infile:\n",
+    "    print infile.read()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'data/example.csv'"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "filename"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Creating a `DataFrame`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "          date     type  value\n",
+      "0   2014-02-16  Model-A      6\n",
+      "1   2014-02-16  Model-B      6\n",
+      "2   2014-02-16  Model-C      7\n",
+      "3   2014-02-17  Model-A      6\n",
+      "4   2014-02-17  Model-B      2\n",
+      "5   2014-02-17  Model-C      3\n",
+      "6   2014-02-18  Model-A      5\n",
+      "7   2014-02-18  Model-B      7\n",
+      "8   2014-02-18  Model-C      6\n",
+      "9   2014-02-19  Model-A      5\n",
+      "10  2014-02-19  Model-B      4\n",
+      "11  2014-02-19  Model-C      5\n"
+     ]
+    }
+   ],
+   "source": [
+    "df = pd.read_csv(filename)\n",
+    "print df"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**Why store it this way?**\n",
+    "\n",
+    "- Different type\n",
+    "- Different metric"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Reshape with `pivot`\n",
+    "\n",
+    "- Question: What is the average value for each date?\n",
+    "- How many observations do I have for each model?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C\n",
+      "date                                 \n",
+      "2014-02-16        6        6        7\n",
+      "2014-02-17        6        2        3\n",
+      "2014-02-18        5        7        6\n",
+      "2014-02-19        5        4        5\n"
+     ]
+    }
+   ],
+   "source": [
+    "results = df.pivot('date', 'type', 'value') #row, column, values (optional)\n",
+    "print results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index([u'Model-A', u'Model-B', u'Model-C'], dtype='object', name=u'type')"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index([u'2014-02-16', u'2014-02-17', u'2014-02-18', u'2014-02-19'], dtype='object', name=u'date')"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.index"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Columns access"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "date\n",
+       "2014-02-16    6\n",
+       "2014-02-17    6\n",
+       "2014-02-18    5\n",
+       "2014-02-19    5\n",
+       "Name: Model-A, dtype: int64"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results['Model-A']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([6, 6, 5, 5])"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results['Model-A'].values"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Row access"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "type\n",
+       "Model-A    6\n",
+       "Model-B    6\n",
+       "Model-C    7\n",
+       "Name: 2014-02-16, dtype: int64"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.ix[0]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "type\n",
+       "Model-A    6\n",
+       "Model-B    6\n",
+       "Model-C    7\n",
+       "Name: 2014-02-16, dtype: int64"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.ix['2014-02-16']"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Range access"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-B  Model-C\n",
+      "date                        \n",
+      "2014-02-18        7        6\n",
+      "2014-02-19        4        5\n"
+     ]
+    }
+   ],
+   "source": [
+    "print results.ix[2:4,1:]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Summarize rows and columns\n",
+    "\n",
+    "Question: What is the average value for each date?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "date\n",
+       "2014-02-16    6.333333\n",
+       "2014-02-17    3.666667\n",
+       "2014-02-18    6.000000\n",
+       "2014-02-19    4.666667\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.mean(axis=1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "How many observations do I have for each model?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "type\n",
+       "Model-A    4\n",
+       "Model-B    4\n",
+       "Model-C    4\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.count(axis=0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Add some data with `pd.concat`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>date</th>\n",
+       "      <th>type</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-D</td>\n",
+       "      <td>11</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2014-02-18</td>\n",
+       "      <td>Model-D</td>\n",
+       "      <td>7</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         date     type  value\n",
+       "0  2014-02-16  Model-D     11\n",
+       "1  2014-02-18  Model-D      7"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = pd.read_csv(filename)\n",
+    "tmp = {'date': ['2014-02-16','2014-02-18'],\n",
+    "       'type': ['Model-D', 'Model-D'],\n",
+    "       'value': [11, 7]}\n",
+    "\n",
+    "pd.DataFrame(tmp)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(14, 3)"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = pd.concat([df,pd.DataFrame(tmp)], ignore_index=True)\n",
+    "df.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Delete a row"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>date</th>\n",
+       "      <th>type</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-A</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-B</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-A</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-B</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-C</td>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         date     type  value\n",
+       "0  2014-02-16  Model-A      6\n",
+       "1  2014-02-16  Model-B      6\n",
+       "3  2014-02-17  Model-A      6\n",
+       "4  2014-02-17  Model-B      2\n",
+       "5  2014-02-17  Model-C      3"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.drop(2, axis=0).head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>date</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         date  value\n",
+       "0  2014-02-16      6\n",
+       "1  2014-02-16      6\n",
+       "2  2014-02-16      7\n",
+       "3  2014-02-17      6\n",
+       "4  2014-02-17      2"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.drop('type', axis=1).head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Let's `reshape` again..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C  Model-D\n",
+      "date                                          \n",
+      "2014-02-16      6.0      6.0      7.0     11.0\n",
+      "2014-02-17      6.0      2.0      3.0      NaN\n",
+      "2014-02-18      5.0      7.0      6.0      7.0\n",
+      "2014-02-19      5.0      4.0      5.0      NaN\n"
+     ]
+    }
+   ],
+   "source": [
+    "results = df.pivot('date','type', 'value')\n",
+    "print results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "date\n",
+       "2014-02-16    7.500000\n",
+       "2014-02-17    3.666667\n",
+       "2014-02-18    6.250000\n",
+       "2014-02-19    4.666667\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.mean(axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "type\n",
+       "Model-A    4\n",
+       "Model-B    4\n",
+       "Model-C    4\n",
+       "Model-D    2\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.count(axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "date\n",
+       "2014-02-16    4\n",
+       "2014-02-17    3\n",
+       "2014-02-18    4\n",
+       "2014-02-19    3\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "results.count(axis=1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Missing vales: `isnull()` and `fillna()`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type       Model-A Model-B Model-C Model-D\n",
+      "date                                      \n",
+      "2014-02-16   False   False   False   False\n",
+      "2014-02-17   False   False   False    True\n",
+      "2014-02-18   False   False   False   False\n",
+      "2014-02-19   False   False   False    True\n"
+     ]
+    }
+   ],
+   "source": [
+    "print results.isnull()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C  Model-D\n",
+      "date                                          \n",
+      "2014-02-16      6.0      6.0      7.0     11.0\n",
+      "2014-02-17      6.0      2.0      3.0      0.0\n",
+      "2014-02-18      5.0      7.0      6.0      7.0\n",
+      "2014-02-19      5.0      4.0      5.0      0.0\n"
+     ]
+    }
+   ],
+   "source": [
+    "print results.fillna(0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C  Model-D\n",
+      "date                                          \n",
+      "2014-02-16      6.0      6.0      7.0     11.0\n",
+      "2014-02-17      6.0      2.0      3.0      NaN\n",
+      "2014-02-18      5.0      7.0      6.0      7.0\n",
+      "2014-02-19      5.0      4.0      5.0      NaN\n"
+     ]
+    }
+   ],
+   "source": [
+    "print results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "tmp = results.copy()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C  Model-D\n",
+      "date                                          \n",
+      "2014-02-16      6.0      6.0      7.0     11.0\n",
+      "2014-02-17      6.0      2.0      3.0      0.0\n",
+      "2014-02-18      5.0      7.0      6.0      7.0\n",
+      "2014-02-19      5.0      4.0      5.0      0.0\n"
+     ]
+    }
+   ],
+   "source": [
+    "tmp.fillna(0, inplace=True)\n",
+    "print tmp"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### `reset_index`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index([u'date', u'Model-A', u'Model-B', u'Model-C', u'Model-D'], dtype='object', name=u'type')"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tmp.reset_index(inplace=True)\n",
+    "tmp.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        date  Model-A  Model-B  Model-C  Model-D\n",
+      "0     2014-02-16      6.0      6.0      7.0     11.0\n",
+      "1     2014-02-17      6.0      2.0      3.0      0.0\n",
+      "2     2014-02-18      5.0      7.0      6.0      7.0\n",
+      "3     2014-02-19      5.0      4.0      5.0      0.0\n"
+     ]
+    }
+   ],
+   "source": [
+    "print tmp"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Convert to a `numpy` array"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C  Model-D\n",
+      "date                                          \n",
+      "2014-02-16      6.0      6.0      7.0     11.0\n",
+      "2014-02-17      6.0      2.0      3.0      0.0\n",
+      "2014-02-18      5.0      7.0      6.0      7.0\n",
+      "2014-02-19      5.0      4.0      5.0      0.0\n"
+     ]
+    }
+   ],
+   "source": [
+    "print tmp.set_index('date')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[  6.,   6.,   7.,  11.],\n",
+       "       [  6.,   2.,   3.,   0.],\n",
+       "       [  5.,   7.,   6.,   7.],\n",
+       "       [  5.,   4.,   5.,   0.]])"
+      ]
+     },
+     "execution_count": 32,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "X = tmp.set_index('date').as_matrix()\n",
+    "X"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Reshape with `melt`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        Model-A  Model-B  Model-C  Model-D\n",
+      "date                                          \n",
+      "2014-02-16      6.0      6.0      7.0     11.0\n",
+      "2014-02-17      6.0      2.0      3.0      NaN\n",
+      "2014-02-18      5.0      7.0      6.0      7.0\n",
+      "2014-02-19      5.0      4.0      5.0      NaN\n"
+     ]
+    }
+   ],
+   "source": [
+    "results = df.pivot('date','type', 'value')\n",
+    "print results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "type        date  Model-A  Model-B  Model-C  Model-D\n",
+      "0     2014-02-16      6.0      6.0      7.0     11.0\n",
+      "1     2014-02-17      6.0      2.0      3.0      NaN\n",
+      "2     2014-02-18      5.0      7.0      6.0      7.0\n",
+      "3     2014-02-19      5.0      4.0      5.0      NaN\n"
+     ]
+    }
+   ],
+   "source": [
+    "results.reset_index(inplace=True)\n",
+    "print results"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "          date     type  value\n",
+      "0   2014-02-16  Model-A    6.0\n",
+      "1   2014-02-17  Model-A    6.0\n",
+      "2   2014-02-18  Model-A    5.0\n",
+      "3   2014-02-19  Model-A    5.0\n",
+      "4   2014-02-16  Model-B    6.0\n",
+      "5   2014-02-17  Model-B    2.0\n",
+      "6   2014-02-18  Model-B    7.0\n",
+      "7   2014-02-19  Model-B    4.0\n",
+      "8   2014-02-16  Model-C    7.0\n",
+      "9   2014-02-17  Model-C    3.0\n",
+      "10  2014-02-18  Model-C    6.0\n",
+      "11  2014-02-19  Model-C    5.0\n",
+      "12  2014-02-16  Model-D   11.0\n",
+      "13  2014-02-17  Model-D    NaN\n",
+      "14  2014-02-18  Model-D    7.0\n",
+      "15  2014-02-19  Model-D    NaN\n"
+     ]
+    }
+   ],
+   "source": [
+    "back = pd.melt(results, id_vars=['date'])\n",
+    "print back"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### `dropna()`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>date</th>\n",
+       "      <th>type</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-A</td>\n",
+       "      <td>6.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-A</td>\n",
+       "      <td>6.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>2014-02-18</td>\n",
+       "      <td>Model-A</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>2014-02-19</td>\n",
+       "      <td>Model-A</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-B</td>\n",
+       "      <td>6.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-B</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>2014-02-18</td>\n",
+       "      <td>Model-B</td>\n",
+       "      <td>7.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>2014-02-19</td>\n",
+       "      <td>Model-B</td>\n",
+       "      <td>4.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-C</td>\n",
+       "      <td>7.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-C</td>\n",
+       "      <td>3.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>10</th>\n",
+       "      <td>2014-02-18</td>\n",
+       "      <td>Model-C</td>\n",
+       "      <td>6.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11</th>\n",
+       "      <td>2014-02-19</td>\n",
+       "      <td>Model-C</td>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>12</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-D</td>\n",
+       "      <td>11.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>14</th>\n",
+       "      <td>2014-02-18</td>\n",
+       "      <td>Model-D</td>\n",
+       "      <td>7.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "          date     type  value\n",
+       "0   2014-02-16  Model-A    6.0\n",
+       "1   2014-02-17  Model-A    6.0\n",
+       "2   2014-02-18  Model-A    5.0\n",
+       "3   2014-02-19  Model-A    5.0\n",
+       "4   2014-02-16  Model-B    6.0\n",
+       "5   2014-02-17  Model-B    2.0\n",
+       "6   2014-02-18  Model-B    7.0\n",
+       "7   2014-02-19  Model-B    4.0\n",
+       "8   2014-02-16  Model-C    7.0\n",
+       "9   2014-02-17  Model-C    3.0\n",
+       "10  2014-02-18  Model-C    6.0\n",
+       "11  2014-02-19  Model-C    5.0\n",
+       "12  2014-02-16  Model-D   11.0\n",
+       "14  2014-02-18  Model-D    7.0"
+      ]
+     },
+     "execution_count": 36,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "back.dropna(axis=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>date</th>\n",
+       "      <th>type</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-A</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2014-02-17</td>\n",
+       "      <td>Model-A</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>2014-02-18</td>\n",
+       "      <td>Model-A</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>2014-02-19</td>\n",
+       "      <td>Model-A</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>2014-02-16</td>\n",
+       "      <td>Model-B</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         date     type\n",
+       "0  2014-02-16  Model-A\n",
+       "1  2014-02-17  Model-A\n",
+       "2  2014-02-18  Model-A\n",
+       "3  2014-02-19  Model-A\n",
+       "4  2014-02-16  Model-B"
+      ]
+     },
+     "execution_count": 37,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "back.dropna(axis=1).head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Write to file `to_csv`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "back.dropna(axis=0, inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "back.to_csv('data/back.csv', index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "date,type,value\n",
+      "2014-02-16,Model-A,6.0\n",
+      "2014-02-17,Model-A,6.0\n",
+      "2014-02-18,Model-A,5.0\n",
+      "2014-02-19,Model-A,5.0\n",
+      "2014-02-16,Model-B,6.0\n",
+      "2014-02-17,Model-B,2.0\n",
+      "2014-02-18,Model-B,7.0\n",
+      "2014-02-19,Model-B,4.0\n",
+      "2014-02-16,Model-C,7.0\n",
+      "2014-02-17,Model-C,3.0\n",
+      "2014-02-18,Model-C,6.0\n",
+      "2014-02-19,Model-C,5.0\n",
+      "2014-02-16,Model-D,11.0\n",
+      "2014-02-18,Model-D,7.0\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "print open('data/back.csv').read()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Movies\n",
+    "\n",
+    "This is adapted from [Python for Data Analysis](http://www.amazon.com/Python-Data-Analysis-Wrangling-IPython/dp/1449319793) by Wes McKinney\n",
+    "\n",
+    "- Joining\n",
+    "- Groupby\n",
+    "- Sorting\n",
+    "\n",
+    "Ultimate question: What's the best **date-night movie**?\n",
+    "\n",
+    "- Highly rated movie\n",
+    "- That appeals to both `M` and `F`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### MovieLens Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[GroupLens Research](http://www.grouplens.org/) provides collections of movie ratings data collected from users of the recommendation service MovieLens in the late 1990s and early 2000s. The data provide movie ratings, movie metadata (genres and year), and demographic data about the users (age, zip code, gender, and occupation).\n",
+    "\n",
+    "This data set contains 1,000,209 anonymous ratings of approximately 3,900 movies made by 6,040 users who joined MovieLens in 2000. It’s spread across 3 tables: ratings, user information, and movie information. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### File descriptions\n",
+    "\n",
+    "All ratings are contained in the file \"ratings.dat\" and are in the\n",
+    "following format:\n",
+    "\n",
+    "UserID::MovieID::Rating::Timestamp\n",
+    "\n",
+    "- UserIDs range between 1 and 6040 \n",
+    "- MovieIDs range between 1 and 3952\n",
+    "- Ratings are made on a 5-star scale (whole-star ratings only)\n",
+    "- Timestamp is represented in seconds since the epoch as returned by time(2)\n",
+    "- Each user has at least 20 ratings\n",
+    "\n",
+    "User information is in the file \"users.dat\" and is in the following\n",
+    "format:\n",
+    "\n",
+    "UserID::Gender::Age::Occupation::Zip-code\n",
+    "\n",
+    "All demographic information is provided voluntarily by the users and is\n",
+    "not checked for accuracy.  Only users who have provided some demographic\n",
+    "information are included in this data set.\n",
+    "\n",
+    "- Gender is denoted by a \"M\" for male and \"F\" for female\n",
+    "\n",
+    "Movie information is in the file \"movies.dat\" and is in the following\n",
+    "format:\n",
+    "\n",
+    "MovieID::Title::Genres\n",
+    "\n",
+    "Titles are identical to titles provided by the IMDB (including\n",
+    "year of release)\n",
+    "Genres are pipe-separated and are selected from the following genres:\n",
+    "\n",
+    "- Action\n",
+    "- Adventure\n",
+    "- Animation\n",
+    "- Children's\n",
+    "- Comedy\n",
+    "- Crime\n",
+    "- Documentary\n",
+    "- Drama\n",
+    "- Fantasy\n",
+    "- Film-Noir\n",
+    "- Horror\n",
+    "- Musical\n",
+    "- Mystery\n",
+    "- Romance\n",
+    "- Sci-Fi\n",
+    "- Thriller\n",
+    "- War\n",
+    "- Western"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Read the data into DataFrames"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "unames = ['user_id', 'gender', 'age', 'occupation', 'zip'] \n",
+    "users = pd.read_table('users.dat', sep='::', header=None, names=unames, engine='python')\n",
+    "\n",
+    "rnames = ['user_id', 'movie_id', 'rating', 'timestamp']\n",
+    "ratings = pd.read_table('ratings.dat', sep='::', header=None, names=rnames, engine='python')\n",
+    "\n",
+    "mnames = ['movie_id', 'title', 'genres']\n",
+    "movies = pd.read_table('movies.dat', sep='::', header=None, names=mnames, engine='python')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>user_id</th>\n",
+       "      <th>gender</th>\n",
+       "      <th>age</th>\n",
+       "      <th>occupation</th>\n",
+       "      <th>zip</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>F</td>\n",
+       "      <td>1</td>\n",
+       "      <td>10</td>\n",
+       "      <td>48067</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>M</td>\n",
+       "      <td>56</td>\n",
+       "      <td>16</td>\n",
+       "      <td>70072</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>M</td>\n",
+       "      <td>25</td>\n",
+       "      <td>15</td>\n",
+       "      <td>55117</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>M</td>\n",
+       "      <td>45</td>\n",
+       "      <td>7</td>\n",
+       "      <td>02460</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>M</td>\n",
+       "      <td>25</td>\n",
+       "      <td>20</td>\n",
+       "      <td>55455</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   user_id gender  age  occupation    zip\n",
+       "0        1      F    1          10  48067\n",
+       "1        2      M   56          16  70072\n",
+       "2        3      M   25          15  55117\n",
+       "3        4      M   45           7  02460\n",
+       "4        5      M   25          20  55455"
+      ]
+     },
+     "execution_count": 42,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "users.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>user_id</th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>rating</th>\n",
+       "      <th>timestamp</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>5</td>\n",
+       "      <td>978300760</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>661</td>\n",
+       "      <td>3</td>\n",
+       "      <td>978302109</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>1</td>\n",
+       "      <td>914</td>\n",
+       "      <td>3</td>\n",
+       "      <td>978301968</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>1</td>\n",
+       "      <td>3408</td>\n",
+       "      <td>4</td>\n",
+       "      <td>978300275</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1</td>\n",
+       "      <td>2355</td>\n",
+       "      <td>5</td>\n",
+       "      <td>978824291</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   user_id  movie_id  rating  timestamp\n",
+       "0        1      1193       5  978300760\n",
+       "1        1       661       3  978302109\n",
+       "2        1       914       3  978301968\n",
+       "3        1      3408       4  978300275\n",
+       "4        1      2355       5  978824291"
+      ]
+     },
+     "execution_count": 43,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "ratings.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>title</th>\n",
+       "      <th>genres</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Toy Story (1995)</td>\n",
+       "      <td>Animation|Children's|Comedy</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>Jumanji (1995)</td>\n",
+       "      <td>Adventure|Children's|Fantasy</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>Grumpier Old Men (1995)</td>\n",
+       "      <td>Comedy|Romance</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>Waiting to Exhale (1995)</td>\n",
+       "      <td>Comedy|Drama</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>Father of the Bride Part II (1995)</td>\n",
+       "      <td>Comedy</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   movie_id                               title                        genres\n",
+       "0         1                    Toy Story (1995)   Animation|Children's|Comedy\n",
+       "1         2                      Jumanji (1995)  Adventure|Children's|Fantasy\n",
+       "2         3             Grumpier Old Men (1995)                Comedy|Romance\n",
+       "3         4            Waiting to Exhale (1995)                  Comedy|Drama\n",
+       "4         5  Father of the Bride Part II (1995)                        Comedy"
+      ]
+     },
+     "execution_count": 44,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Hmmmm ... `genres` has multiple entries in an ugly format. We'll deal with that later."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 1000209 entries, 0 to 1000208\n",
+      "Data columns (total 4 columns):\n",
+      "user_id      1000209 non-null int64\n",
+      "movie_id     1000209 non-null int64\n",
+      "rating       1000209 non-null int64\n",
+      "timestamp    1000209 non-null int64\n",
+      "dtypes: int64(4)\n",
+      "memory usage: 30.5 MB\n"
+     ]
+    }
+   ],
+   "source": [
+    "ratings.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Clean up the `movies`\n",
+    "\n",
+    "- Get the `year`\n",
+    "- Shorten the `title`\n",
+    "\n",
+    "Don't worry if you don't understand this code (and ignore the warning):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 46,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/liran/anaconda/lib/python2.7/site-packages/ipykernel/__main__.py:1: FutureWarning: In future versions of pandas, match will change to always return a bool indexer.\n",
+      "  if __name__ == '__main__':\n"
+     ]
+    }
+   ],
+   "source": [
+    "tmp = movies.title.str.match('(.*) \\(([0-9]+)\\)')\n",
+    "movies['year'] = tmp.map(lambda x: x[1] if len(x) > 0 else None)\n",
+    "movies['short_title'] = tmp.map(lambda x: x[0][:40] if len(x) > 0 else None)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>title</th>\n",
+       "      <th>genres</th>\n",
+       "      <th>year</th>\n",
+       "      <th>short_title</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>Toy Story (1995)</td>\n",
+       "      <td>Animation|Children's|Comedy</td>\n",
+       "      <td>1995</td>\n",
+       "      <td>Toy Story</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>Jumanji (1995)</td>\n",
+       "      <td>Adventure|Children's|Fantasy</td>\n",
+       "      <td>1995</td>\n",
+       "      <td>Jumanji</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3</td>\n",
+       "      <td>Grumpier Old Men (1995)</td>\n",
+       "      <td>Comedy|Romance</td>\n",
+       "      <td>1995</td>\n",
+       "      <td>Grumpier Old Men</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>4</td>\n",
+       "      <td>Waiting to Exhale (1995)</td>\n",
+       "      <td>Comedy|Drama</td>\n",
+       "      <td>1995</td>\n",
+       "      <td>Waiting to Exhale</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>5</td>\n",
+       "      <td>Father of the Bride Part II (1995)</td>\n",
+       "      <td>Comedy</td>\n",
+       "      <td>1995</td>\n",
+       "      <td>Father of the Bride Part II</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   movie_id                               title                        genres  \\\n",
+       "0         1                    Toy Story (1995)   Animation|Children's|Comedy   \n",
+       "1         2                      Jumanji (1995)  Adventure|Children's|Fantasy   \n",
+       "2         3             Grumpier Old Men (1995)                Comedy|Romance   \n",
+       "3         4            Waiting to Exhale (1995)                  Comedy|Drama   \n",
+       "4         5  Father of the Bride Part II (1995)                        Comedy   \n",
+       "\n",
+       "   year                  short_title  \n",
+       "0  1995                    Toy Story  \n",
+       "1  1995                      Jumanji  \n",
+       "2  1995             Grumpier Old Men  \n",
+       "3  1995            Waiting to Exhale  \n",
+       "4  1995  Father of the Bride Part II  "
+      ]
+     },
+     "execution_count": 47,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Join the tables with `pd.merge`\n",
+    "\n",
+    "Analyzing the data spread across three tables is not easy. For example, suppose you wanted to compute mean ratings for a particular movie by sex and age. This is much easier to do with all of the data merged together into a single table. Using pandas’s `merge` function, we first merge `ratings` with `users` then merge that result with the `movies` data. pandas infers which columns to use as the merge (or join) keys based on overlapping names:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "data = pd.merge(pd.merge(ratings, users), movies)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "Int64Index: 1000209 entries, 0 to 1000208\n",
+      "Data columns (total 12 columns):\n",
+      "user_id        1000209 non-null int64\n",
+      "movie_id       1000209 non-null int64\n",
+      "rating         1000209 non-null int64\n",
+      "timestamp      1000209 non-null int64\n",
+      "gender         1000209 non-null object\n",
+      "age            1000209 non-null int64\n",
+      "occupation     1000209 non-null int64\n",
+      "zip            1000209 non-null object\n",
+      "title          1000209 non-null object\n",
+      "genres         1000209 non-null object\n",
+      "year           1000209 non-null object\n",
+      "short_title    1000209 non-null object\n",
+      "dtypes: int64(6), object(6)\n",
+      "memory usage: 99.2+ MB\n"
+     ]
+    }
+   ],
+   "source": [
+    "data.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>user_id</th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>rating</th>\n",
+       "      <th>timestamp</th>\n",
+       "      <th>gender</th>\n",
+       "      <th>age</th>\n",
+       "      <th>occupation</th>\n",
+       "      <th>zip</th>\n",
+       "      <th>title</th>\n",
+       "      <th>genres</th>\n",
+       "      <th>year</th>\n",
+       "      <th>short_title</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>5</td>\n",
+       "      <td>978300760</td>\n",
+       "      <td>F</td>\n",
+       "      <td>1</td>\n",
+       "      <td>10</td>\n",
+       "      <td>48067</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest (1975)</td>\n",
+       "      <td>Drama</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>5</td>\n",
+       "      <td>978298413</td>\n",
+       "      <td>M</td>\n",
+       "      <td>56</td>\n",
+       "      <td>16</td>\n",
+       "      <td>70072</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest (1975)</td>\n",
+       "      <td>Drama</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>12</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>4</td>\n",
+       "      <td>978220179</td>\n",
+       "      <td>M</td>\n",
+       "      <td>25</td>\n",
+       "      <td>12</td>\n",
+       "      <td>32793</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest (1975)</td>\n",
+       "      <td>Drama</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>15</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>4</td>\n",
+       "      <td>978199279</td>\n",
+       "      <td>M</td>\n",
+       "      <td>25</td>\n",
+       "      <td>7</td>\n",
+       "      <td>22903</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest (1975)</td>\n",
+       "      <td>Drama</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>17</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>5</td>\n",
+       "      <td>978158471</td>\n",
+       "      <td>M</td>\n",
+       "      <td>50</td>\n",
+       "      <td>1</td>\n",
+       "      <td>95350</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest (1975)</td>\n",
+       "      <td>Drama</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   user_id  movie_id  rating  timestamp gender  age  occupation    zip  \\\n",
+       "0        1      1193       5  978300760      F    1          10  48067   \n",
+       "1        2      1193       5  978298413      M   56          16  70072   \n",
+       "2       12      1193       4  978220179      M   25          12  32793   \n",
+       "3       15      1193       4  978199279      M   25           7  22903   \n",
+       "4       17      1193       5  978158471      M   50           1  95350   \n",
+       "\n",
+       "                                    title genres  year  \\\n",
+       "0  One Flew Over the Cuckoo's Nest (1975)  Drama  1975   \n",
+       "1  One Flew Over the Cuckoo's Nest (1975)  Drama  1975   \n",
+       "2  One Flew Over the Cuckoo's Nest (1975)  Drama  1975   \n",
+       "3  One Flew Over the Cuckoo's Nest (1975)  Drama  1975   \n",
+       "4  One Flew Over the Cuckoo's Nest (1975)  Drama  1975   \n",
+       "\n",
+       "                       short_title  \n",
+       "0  One Flew Over the Cuckoo's Nest  \n",
+       "1  One Flew Over the Cuckoo's Nest  \n",
+       "2  One Flew Over the Cuckoo's Nest  \n",
+       "3  One Flew Over the Cuckoo's Nest  \n",
+       "4  One Flew Over the Cuckoo's Nest  "
+      ]
+     },
+     "execution_count": 50,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### What are the highest rated movies?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>user_id</th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>rating</th>\n",
+       "      <th>timestamp</th>\n",
+       "      <th>gender</th>\n",
+       "      <th>age</th>\n",
+       "      <th>occupation</th>\n",
+       "      <th>zip</th>\n",
+       "      <th>title</th>\n",
+       "      <th>genres</th>\n",
+       "      <th>year</th>\n",
+       "      <th>short_title</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1193</td>\n",
+       "      <td>5</td>\n",
+       "      <td>978300760</td>\n",
+       "      <td>F</td>\n",
+       "      <td>1</td>\n",
+       "      <td>10</td>\n",
+       "      <td>48067</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest (1975)</td>\n",
+       "      <td>Drama</td>\n",
+       "      <td>1975</td>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>233796</th>\n",
+       "      <td>5374</td>\n",
+       "      <td>2770</td>\n",
+       "      <td>5</td>\n",
+       "      <td>962391108</td>\n",
+       "      <td>M</td>\n",
+       "      <td>35</td>\n",
+       "      <td>7</td>\n",
+       "      <td>38018</td>\n",
+       "      <td>Bowfinger (1999)</td>\n",
+       "      <td>Comedy</td>\n",
+       "      <td>1999</td>\n",
+       "      <td>Bowfinger</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>233813</th>\n",
+       "      <td>5483</td>\n",
+       "      <td>2770</td>\n",
+       "      <td>5</td>\n",
+       "      <td>959888512</td>\n",
+       "      <td>F</td>\n",
+       "      <td>25</td>\n",
+       "      <td>6</td>\n",
+       "      <td>15202</td>\n",
+       "      <td>Bowfinger (1999)</td>\n",
+       "      <td>Comedy</td>\n",
+       "      <td>1999</td>\n",
+       "      <td>Bowfinger</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>669852</th>\n",
+       "      <td>1812</td>\n",
+       "      <td>3635</td>\n",
+       "      <td>5</td>\n",
+       "      <td>974706848</td>\n",
+       "      <td>F</td>\n",
+       "      <td>25</td>\n",
+       "      <td>12</td>\n",
+       "      <td>48103</td>\n",
+       "      <td>Spy Who Loved Me, The (1977)</td>\n",
+       "      <td>Action</td>\n",
+       "      <td>1977</td>\n",
+       "      <td>Spy Who Loved Me, The</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>669856</th>\n",
+       "      <td>1871</td>\n",
+       "      <td>3635</td>\n",
+       "      <td>5</td>\n",
+       "      <td>974694190</td>\n",
+       "      <td>F</td>\n",
+       "      <td>45</td>\n",
+       "      <td>1</td>\n",
+       "      <td>46774</td>\n",
+       "      <td>Spy Who Loved Me, The (1977)</td>\n",
+       "      <td>Action</td>\n",
+       "      <td>1977</td>\n",
+       "      <td>Spy Who Loved Me, The</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "        user_id  movie_id  rating  timestamp gender  age  occupation    zip  \\\n",
+       "0             1      1193       5  978300760      F    1          10  48067   \n",
+       "233796     5374      2770       5  962391108      M   35           7  38018   \n",
+       "233813     5483      2770       5  959888512      F   25           6  15202   \n",
+       "669852     1812      3635       5  974706848      F   25          12  48103   \n",
+       "669856     1871      3635       5  974694190      F   45           1  46774   \n",
+       "\n",
+       "                                         title  genres  year  \\\n",
+       "0       One Flew Over the Cuckoo's Nest (1975)   Drama  1975   \n",
+       "233796                        Bowfinger (1999)  Comedy  1999   \n",
+       "233813                        Bowfinger (1999)  Comedy  1999   \n",
+       "669852            Spy Who Loved Me, The (1977)  Action  1977   \n",
+       "669856            Spy Who Loved Me, The (1977)  Action  1977   \n",
+       "\n",
+       "                            short_title  \n",
+       "0       One Flew Over the Cuckoo's Nest  \n",
+       "233796                        Bowfinger  \n",
+       "233813                        Bowfinger  \n",
+       "669852            Spy Who Loved Me, The  \n",
+       "669856            Spy Who Loved Me, The  "
+      ]
+     },
+     "execution_count": 51,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data.sort_values(by='rating', ascending=False).head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>short_title</th>\n",
+       "      <th>rating</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>One Flew Over the Cuckoo's Nest</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>233796</th>\n",
+       "      <td>Bowfinger</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>233813</th>\n",
+       "      <td>Bowfinger</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>669852</th>\n",
+       "      <td>Spy Who Loved Me, The</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>669856</th>\n",
+       "      <td>Spy Who Loved Me, The</td>\n",
+       "      <td>5</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                            short_title  rating\n",
+       "0       One Flew Over the Cuckoo's Nest       5\n",
+       "233796                        Bowfinger       5\n",
+       "233813                        Bowfinger       5\n",
+       "669852            Spy Who Loved Me, The       5\n",
+       "669856            Spy Who Loved Me, The       5"
+      ]
+     },
+     "execution_count": 52,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "data[['short_title','rating']].sort_values(by='rating', ascending=False).head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "grp = data[['short_title','rating']].groupby('short_title')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "pandas.core.groupby.DataFrameGroupBy"
+      ]
+     },
+     "execution_count": 54,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(grp)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 55,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mean_rating = grp.mean()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>rating</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>$1,000,000 Duck</th>\n",
+       "      <td>3.027027</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>'Night Mother</th>\n",
+       "      <td>3.371429</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>'Til There Was You</th>\n",
+       "      <td>2.692308</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>'burbs, The</th>\n",
+       "      <td>2.910891</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...And Justice for All</th>\n",
+       "      <td>3.713568</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                          rating\n",
+       "short_title                     \n",
+       "$1,000,000 Duck         3.027027\n",
+       "'Night Mother           3.371429\n",
+       "'Til There Was You      2.692308\n",
+       "'burbs, The             2.910891\n",
+       "...And Justice for All  3.713568"
+      ]
+     },
+     "execution_count": 56,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### What is the highest rated movie?\n",
+    "\n",
+    "Sort by `rating`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 57,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>rating</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Smashing Time</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Song of Freedom</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>One Little Indian</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Ulysses (Ulisse)</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Baby, The</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Follow the Bitch</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Schlafes Bruder (Brother of Sleep)</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Gate of Heavenly Peace, The</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Bittersweet Motel</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Lured</th>\n",
+       "      <td>5.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                    rating\n",
+       "short_title                               \n",
+       "Smashing Time                          5.0\n",
+       "Song of Freedom                        5.0\n",
+       "One Little Indian                      5.0\n",
+       "Ulysses (Ulisse)                       5.0\n",
+       "Baby, The                              5.0\n",
+       "Follow the Bitch                       5.0\n",
+       "Schlafes Bruder (Brother of Sleep)     5.0\n",
+       "Gate of Heavenly Peace, The            5.0\n",
+       "Bittersweet Motel                      5.0\n",
+       "Lured                                  5.0"
+      ]
+     },
+     "execution_count": 57,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.sort_values('rating', ascending=False).head(10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Apply more than one function to the group with the `agg()` method."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 58,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mean_rating = grp['rating'].agg(['mean','count'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>mean</th>\n",
+       "      <th>count</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Gate of Heavenly Peace, The</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Smashing Time</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Baby, The</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Bittersweet Motel</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Follow the Bitch</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Lured</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>One Little Indian</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Schlafes Bruder (Brother of Sleep)</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Song of Freedom</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Ulysses (Ulisse)</th>\n",
+       "      <td>5.0</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                    mean  count\n",
+       "short_title                                    \n",
+       "Gate of Heavenly Peace, The          5.0      3\n",
+       "Smashing Time                        5.0      2\n",
+       "Baby, The                            5.0      1\n",
+       "Bittersweet Motel                    5.0      1\n",
+       "Follow the Bitch                     5.0      1\n",
+       "Lured                                5.0      1\n",
+       "One Little Indian                    5.0      1\n",
+       "Schlafes Bruder (Brother of Sleep)   5.0      1\n",
+       "Song of Freedom                      5.0      1\n",
+       "Ulysses (Ulisse)                     5.0      1"
+      ]
+     },
+     "execution_count": 59,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.sort_values(['mean','count'], ascending=False).head(10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Threshold on the number of ratings"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 60,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "pandas.core.series.Series"
+      ]
+     },
+     "execution_count": 60,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mask = mean_rating['count'] > 1000\n",
+    "type(mask)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 61,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "210"
+      ]
+     },
+     "execution_count": 61,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sum(mask)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 62,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "short_title\n",
+       "$1,000,000 Duck           False\n",
+       "'Night Mother             False\n",
+       "'Til There Was You        False\n",
+       "'burbs, The               False\n",
+       "...And Justice for All    False\n",
+       "Name: count, dtype: bool"
+      ]
+     },
+     "execution_count": 62,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mask.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 63,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>mean</th>\n",
+       "      <th>count</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>2001: A Space Odyssey</th>\n",
+       "      <td>4.068765</td>\n",
+       "      <td>1716</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Abyss, The</th>\n",
+       "      <td>3.683965</td>\n",
+       "      <td>1715</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>African Queen, The</th>\n",
+       "      <td>4.251656</td>\n",
+       "      <td>1057</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Air Force One</th>\n",
+       "      <td>3.588290</td>\n",
+       "      <td>1076</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Airplane!</th>\n",
+       "      <td>3.971115</td>\n",
+       "      <td>1731</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                           mean  count\n",
+       "short_title                           \n",
+       "2001: A Space Odyssey  4.068765   1716\n",
+       "Abyss, The             3.683965   1715\n",
+       "African Queen, The     4.251656   1057\n",
+       "Air Force One          3.588290   1076\n",
+       "Airplane!              3.971115   1731"
+      ]
+     },
+     "execution_count": 63,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.ix[mask].head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 64,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1001"
+      ]
+     },
+     "execution_count": 64,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.ix[mask]['count'].min()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 65,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "3428"
+      ]
+     },
+     "execution_count": 65,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.ix[mask]['count'].max()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Highest rated movie with at least 1000 votes?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 66,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>mean</th>\n",
+       "      <th>count</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Shawshank Redemption, The</th>\n",
+       "      <td>4.554558</td>\n",
+       "      <td>2227</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Godfather, The</th>\n",
+       "      <td>4.524966</td>\n",
+       "      <td>2223</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Usual Suspects, The</th>\n",
+       "      <td>4.517106</td>\n",
+       "      <td>1783</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Schindler's List</th>\n",
+       "      <td>4.510417</td>\n",
+       "      <td>2304</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Raiders of the Lost Ark</th>\n",
+       "      <td>4.477725</td>\n",
+       "      <td>2514</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Rear Window</th>\n",
+       "      <td>4.476190</td>\n",
+       "      <td>1050</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Star Wars: Episode IV - A New Hope</th>\n",
+       "      <td>4.453694</td>\n",
+       "      <td>2991</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Dr. Strangelove or: How I Learned to Sto</th>\n",
+       "      <td>4.449890</td>\n",
+       "      <td>1367</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Casablanca</th>\n",
+       "      <td>4.412822</td>\n",
+       "      <td>1669</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Sixth Sense, The</th>\n",
+       "      <td>4.406263</td>\n",
+       "      <td>2459</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                              mean  count\n",
+       "short_title                                              \n",
+       "Shawshank Redemption, The                 4.554558   2227\n",
+       "Godfather, The                            4.524966   2223\n",
+       "Usual Suspects, The                       4.517106   1783\n",
+       "Schindler's List                          4.510417   2304\n",
+       "Raiders of the Lost Ark                   4.477725   2514\n",
+       "Rear Window                               4.476190   1050\n",
+       "Star Wars: Episode IV - A New Hope        4.453694   2991\n",
+       "Dr. Strangelove or: How I Learned to Sto  4.449890   1367\n",
+       "Casablanca                                4.412822   1669\n",
+       "Sixth Sense, The                          4.406263   2459"
+      ]
+     },
+     "execution_count": 66,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_rating.ix[mask].sort_values('mean', ascending=False).head(10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### What about gender?\n",
+    "\n",
+    "We can use a pivot table here."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 67,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>$1,000,000 Duck</th>\n",
+       "      <td>3.375000</td>\n",
+       "      <td>2.761905</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>'Night Mother</th>\n",
+       "      <td>3.388889</td>\n",
+       "      <td>3.352941</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>'Til There Was You</th>\n",
+       "      <td>2.675676</td>\n",
+       "      <td>2.733333</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>'burbs, The</th>\n",
+       "      <td>2.793478</td>\n",
+       "      <td>2.962085</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...And Justice for All</th>\n",
+       "      <td>3.828571</td>\n",
+       "      <td>3.689024</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                         F         M\n",
+       "short_title                               \n",
+       "$1,000,000 Duck         3.375000  2.761905\n",
+       "'Night Mother           3.388889  3.352941\n",
+       "'Til There Was You      2.675676  2.733333\n",
+       "'burbs, The             2.793478  2.962085\n",
+       "...And Justice for All  3.828571  3.689024"
+      ]
+     },
+     "execution_count": 67,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_ratings = pd.pivot_table(data, 'rating', index='short_title', columns='gender', aggfunc='mean')\n",
+    "mean_ratings.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Only those that have at least 1000 votes:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mean_ratings = mean_ratings.ix[mask]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>2001: A Space Odyssey</th>\n",
+       "      <td>3.825581</td>\n",
+       "      <td>4.129738</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Abyss, The</th>\n",
+       "      <td>3.659236</td>\n",
+       "      <td>3.689507</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>African Queen, The</th>\n",
+       "      <td>4.324232</td>\n",
+       "      <td>4.223822</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Air Force One</th>\n",
+       "      <td>3.699588</td>\n",
+       "      <td>3.555822</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Airplane!</th>\n",
+       "      <td>3.656566</td>\n",
+       "      <td>4.064419</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                        F         M\n",
+       "short_title                              \n",
+       "2001: A Space Odyssey  3.825581  4.129738\n",
+       "Abyss, The             3.659236  3.689507\n",
+       "African Queen, The     4.324232  4.223822\n",
+       "Air Force One          3.699588  3.555822\n",
+       "Airplane!              3.656566  4.064419"
+      ]
+     },
+     "execution_count": 69,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_ratings.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Favorites for M and for F"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Godfather, The</th>\n",
+       "      <td>4.314700</td>\n",
+       "      <td>4.583333</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Shawshank Redemption, The</th>\n",
+       "      <td>4.539075</td>\n",
+       "      <td>4.560625</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Raiders of the Lost Ark</th>\n",
+       "      <td>4.332168</td>\n",
+       "      <td>4.520597</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Usual Suspects, The</th>\n",
+       "      <td>4.513317</td>\n",
+       "      <td>4.518248</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Star Wars: Episode IV - A New Hope</th>\n",
+       "      <td>4.302937</td>\n",
+       "      <td>4.495307</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Schindler's List</th>\n",
+       "      <td>4.562602</td>\n",
+       "      <td>4.491415</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Rear Window</th>\n",
+       "      <td>4.484536</td>\n",
+       "      <td>4.472991</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Dr. Strangelove or: How I Learned to Sto</th>\n",
+       "      <td>4.376623</td>\n",
+       "      <td>4.464789</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Casablanca</th>\n",
+       "      <td>4.300990</td>\n",
+       "      <td>4.461340</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Godfather: Part II, The</th>\n",
+       "      <td>4.040936</td>\n",
+       "      <td>4.437778</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                                           F         M\n",
+       "short_title                                                 \n",
+       "Godfather, The                            4.314700  4.583333\n",
+       "Shawshank Redemption, The                 4.539075  4.560625\n",
+       "Raiders of the Lost Ark                   4.332168  4.520597\n",
+       "Usual Suspects, The                       4.513317  4.518248\n",
+       "Star Wars: Episode IV - A New Hope        4.302937  4.495307\n",
+       "Schindler's List                          4.562602  4.491415\n",
+       "Rear Window                               4.484536  4.472991\n",
+       "Dr. Strangelove or: How I Learned to Sto  4.376623  4.464789\n",
+       "Casablanca                                4.300990  4.461340\n",
+       "Godfather: Part II, The                   4.040936  4.437778"
+      ]
+     },
+     "execution_count": 70,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_ratings.sort_values('M', ascending=False).head(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Schindler's List</th>\n",
+       "      <td>4.562602</td>\n",
+       "      <td>4.491415</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Shawshank Redemption, The</th>\n",
+       "      <td>4.539075</td>\n",
+       "      <td>4.560625</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Usual Suspects, The</th>\n",
+       "      <td>4.513317</td>\n",
+       "      <td>4.518248</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Rear Window</th>\n",
+       "      <td>4.484536</td>\n",
+       "      <td>4.472991</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Sixth Sense, The</th>\n",
+       "      <td>4.477410</td>\n",
+       "      <td>4.379944</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Life Is Beautiful (La Vita � bella)</th>\n",
+       "      <td>4.422343</td>\n",
+       "      <td>4.286624</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Dr. Strangelove or: How I Learned to Sto</th>\n",
+       "      <td>4.376623</td>\n",
+       "      <td>4.464789</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>North by Northwest</th>\n",
+       "      <td>4.364458</td>\n",
+       "      <td>4.390641</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Wizard of Oz, The</th>\n",
+       "      <td>4.355030</td>\n",
+       "      <td>4.203138</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Amadeus</th>\n",
+       "      <td>4.346734</td>\n",
+       "      <td>4.213415</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                                           F         M\n",
+       "short_title                                                 \n",
+       "Schindler's List                          4.562602  4.491415\n",
+       "Shawshank Redemption, The                 4.539075  4.560625\n",
+       "Usual Suspects, The                       4.513317  4.518248\n",
+       "Rear Window                               4.484536  4.472991\n",
+       "Sixth Sense, The                          4.477410  4.379944\n",
+       "Life Is Beautiful (La Vita � bella)       4.422343  4.286624\n",
+       "Dr. Strangelove or: How I Learned to Sto  4.376623  4.464789\n",
+       "North by Northwest                        4.364458  4.390641\n",
+       "Wizard of Oz, The                         4.355030  4.203138\n",
+       "Amadeus                                   4.346734  4.213415"
+      ]
+     },
+     "execution_count": 71,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_ratings.sort_values('F', ascending=False).head(10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Which movies differ the most and the least between M and F?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mean_ratings['diff'] = abs(mean_ratings['M'] - mean_ratings['F'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 73,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "      <th>diff</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Animal House</th>\n",
+       "      <td>3.628906</td>\n",
+       "      <td>4.167192</td>\n",
+       "      <td>0.538286</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Rocky Horror Picture Show, The</th>\n",
+       "      <td>3.673016</td>\n",
+       "      <td>3.160131</td>\n",
+       "      <td>0.512885</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mary Poppins</th>\n",
+       "      <td>4.197740</td>\n",
+       "      <td>3.730594</td>\n",
+       "      <td>0.467147</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Reservoir Dogs</th>\n",
+       "      <td>3.769231</td>\n",
+       "      <td>4.213873</td>\n",
+       "      <td>0.444642</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Gone with the Wind</th>\n",
+       "      <td>4.269841</td>\n",
+       "      <td>3.829371</td>\n",
+       "      <td>0.440471</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>South Park: Bigger, Longer and Uncut</th>\n",
+       "      <td>3.422481</td>\n",
+       "      <td>3.846686</td>\n",
+       "      <td>0.424206</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Airplane!</th>\n",
+       "      <td>3.656566</td>\n",
+       "      <td>4.064419</td>\n",
+       "      <td>0.407854</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Predator</th>\n",
+       "      <td>3.299401</td>\n",
+       "      <td>3.706195</td>\n",
+       "      <td>0.406793</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Godfather: Part II, The</th>\n",
+       "      <td>4.040936</td>\n",
+       "      <td>4.437778</td>\n",
+       "      <td>0.396842</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Clockwork Orange, A</th>\n",
+       "      <td>3.757009</td>\n",
+       "      <td>4.145813</td>\n",
+       "      <td>0.388803</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                                       F         M      diff\n",
+       "short_title                                                       \n",
+       "Animal House                          3.628906  4.167192  0.538286\n",
+       "Rocky Horror Picture Show, The        3.673016  3.160131  0.512885\n",
+       "Mary Poppins                          4.197740  3.730594  0.467147\n",
+       "Reservoir Dogs                        3.769231  4.213873  0.444642\n",
+       "Gone with the Wind                    4.269841  3.829371  0.440471\n",
+       "South Park: Bigger, Longer and Uncut  3.422481  3.846686  0.424206\n",
+       "Airplane!                             3.656566  4.064419  0.407854\n",
+       "Predator                              3.299401  3.706195  0.406793\n",
+       "Godfather: Part II, The               4.040936  4.437778  0.396842\n",
+       "Clockwork Orange, A                   3.757009  4.145813  0.388803"
+      ]
+     },
+     "execution_count": 73,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_ratings.sort_values('diff', ascending=False).head(10)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "      <th>diff</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Jerry Maguire</th>\n",
+       "      <td>3.758315</td>\n",
+       "      <td>3.759424</td>\n",
+       "      <td>0.001109</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Indiana Jones and the Temple of Doom</th>\n",
+       "      <td>3.674312</td>\n",
+       "      <td>3.676568</td>\n",
+       "      <td>0.002256</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Good Will Hunting</th>\n",
+       "      <td>4.174672</td>\n",
+       "      <td>4.177064</td>\n",
+       "      <td>0.002392</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Fugitive, The</th>\n",
+       "      <td>4.100457</td>\n",
+       "      <td>4.104046</td>\n",
+       "      <td>0.003590</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Batman Returns</th>\n",
+       "      <td>2.980100</td>\n",
+       "      <td>2.975904</td>\n",
+       "      <td>0.004196</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Usual Suspects, The</th>\n",
+       "      <td>4.513317</td>\n",
+       "      <td>4.518248</td>\n",
+       "      <td>0.004931</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Green Mile, The</th>\n",
+       "      <td>4.159722</td>\n",
+       "      <td>4.153105</td>\n",
+       "      <td>0.006617</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Boogie Nights</th>\n",
+       "      <td>3.763838</td>\n",
+       "      <td>3.771295</td>\n",
+       "      <td>0.007458</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Chicken Run</th>\n",
+       "      <td>3.885559</td>\n",
+       "      <td>3.877339</td>\n",
+       "      <td>0.008220</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Blair Witch Project, The</th>\n",
+       "      <td>3.038732</td>\n",
+       "      <td>3.029381</td>\n",
+       "      <td>0.009351</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                                       F         M      diff\n",
+       "short_title                                                       \n",
+       "Jerry Maguire                         3.758315  3.759424  0.001109\n",
+       "Indiana Jones and the Temple of Doom  3.674312  3.676568  0.002256\n",
+       "Good Will Hunting                     4.174672  4.177064  0.002392\n",
+       "Fugitive, The                         4.100457  4.104046  0.003590\n",
+       "Batman Returns                        2.980100  2.975904  0.004196\n",
+       "Usual Suspects, The                   4.513317  4.518248  0.004931\n",
+       "Green Mile, The                       4.159722  4.153105  0.006617\n",
+       "Boogie Nights                         3.763838  3.771295  0.007458\n",
+       "Chicken Run                           3.885559  3.877339  0.008220\n",
+       "Blair Witch Project, The              3.038732  3.029381  0.009351"
+      ]
+     },
+     "execution_count": 74,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mean_ratings.sort_values('diff', ascending=True).head(10)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Date Night pick?\n",
+    "\n",
+    "What are the highest rated movies where the difference is minimal?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "%matplotlib inline\n",
+    "import matplotlib.pyplot as plt"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\nZrbHzF42s+Nm9i0zWzqZ88bCs9svmVmrmfWY2YCZPWNm/3Uy541B6IvLjfQ7aWblWs8YI8+ftXeb\n2elRb8NmNmsyZy5awJ+hdWb2gJl1jPw5+ryZ/Z7P16z5cuD7IkxmdoOkL6ny9Mtvl/QJSZ82s39X\n61ljEvDiVfWSXpZ0vyoXgE45Ac1+WdIeSe+VtFjS1yX9nZm9fRLGjUZAt35JmyW9S9JbVPmZ+2Mz\n+/AkjBuF0BeXM7MZkj6jytPJTzmB3ZykBZLmjLz9lHPu5VrPGovAZl+Q9KuSVkpaKGm5pGe9vrBz\nrqZvkr4t6RNn/btJ6pK04Ry3b5b0/VHHSpL+vtazxvTm223Ux35d0p8XfQ4pNTvrY34g6b6izyXB\nbn8r6TNFn0vszUb+X7ZJlf/Rl4s+j9i7SXq3Kk+qN73o2RNq9h5JvZKunsjXrek9B4EvwvSLGrtV\nP36e219yePEqf9VoNvJkXVep8h/WlFClbj83ctsnazBidEKbmdlKSfNVWQ6mnAn8rJmk75rZSyO/\nBvw3tZ00HoHNfkPSv0i6x8y6Rn7V/KCZeb32Qq2eBOkM3xdhkip3G413++lmVu+ce626I0YppNtU\nV41m6yVdKemxKs4Vu+BuZvaCpDeOfHyTc+5/1WTC+Hg3M7MFkv5E0q3OudOVPXTKCflZOyLpP6vy\nh129pN+X9KSZvcM5NxV+fRrS7E2q/MpvUNIdI5/jryTNlPShi/3CtV4OgCSMvADYxyRlzrmeoudJ\nxK2SflKVe/uazeyAc25HwTNFx8wuU+XF5TY65w6eOVzgSMlwzu2XtP+sQ982szer8qy7U/JC9Ytw\nmaTTkj7gnPuhJJnZH0r6gpl95GL/gl3r5cD3RZg0cny825+YIvcaSGHdprrgZmb2fkmfkvSbzrmv\n12a8aAV3c84dHvnHfWY2R1KTpKmwHPg2u0rSz0u6xcy2jhy7TJXfZA1JWuqce7JGs8akWv9f+46k\nX6rWUJELaXZE0otnFoMRz6iykF4n6eC4HzVKTa85cM6dlLRX0m1njo38Xvc2Sd86x4f909m3H7F0\n5PiUENhtSgttZmbLJW2T9H7n3FdqPWdsqvizdrkqd/te8gKanZD0M5JuUeURWG+X9ElJ7SP//NQ4\nH3PJqeLP2i2q/AF4yQts9k1Jc82s4axjN6lyb0KXzxev9ZWWvy1pQNIKVR729IikVyS9ceT9/0Nn\nXeWsyktP9qnyqIWbJH1E0pCkXyv6qtHJfPPtNnLs7ar8h/PPkj478u+Lij6XWJtJ+sDIz9ZqVTbx\nM29T6srogG4fkfQfJN048vYhScclbSr6XGJtNs7HT9VHK/j+rN0tKZP0ZklvlfSwpJOSfqXoc4m4\n2ZWSDqtyL94iVR6y/aykT/p83Zpfc+Au/CJMcyRdf9btO8zs30t6SNJ/UWXT+ZBzbko9Lti324in\nVXlMsFR53P4HVPkheVPtJy5eQLPfV+VvvFtH3s74jKRVtZ84DgHdLlPlf0g3SDqlyt2U651zn5q0\noQsW+N/nlBfQrU6Vx/jPVeUPyO9Lus0594+TN3WxAv4M7R95XqDNqvxF8RVVFoWP+XxdXngJAADk\n8NoKAAAgh+UAAADksBwAAIAclgMAAJDDcgAAAHJYDgAAQA7LAQAAyGE5AAAAOSwHAAAgh+UAAADk\nsBwAAICc/weHXA2dcFHrjQAAAABJRU5ErkJggg==\n",
+      "text/plain": [
+       "<matplotlib.figure.Figure at 0x112eced90>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "mean_ratings['diff'].hist(alpha=0.75);"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\nD1+TxS2mYaL5AAAAAElFTkSuQmCC\n",
+      "text/plain": [
+       "<matplotlib.figure.Figure at 0x11556d5d0>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "mean_ratings.hist(alpha=0.75);"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "How about diff < 0.05 and rating > 4.25?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "diff_mask = mean_ratings['diff'] < 0.05 \n",
+    "m_mask = mean_ratings['M'] > 4.25\n",
+    "f_mask = mean_ratings['F'] > 4.25"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mask = diff_mask & m_mask & f_mask"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "date_night = mean_ratings[mask]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "Index: 4 entries, North by Northwest to Usual Suspects, The\n",
+      "Data columns (total 3 columns):\n",
+      "F       4 non-null float64\n",
+      "M       4 non-null float64\n",
+      "diff    4 non-null float64\n",
+      "dtypes: float64(3)\n",
+      "memory usage: 128.0+ bytes\n"
+     ]
+    }
+   ],
+   "source": [
+    "date_night.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "      <th>diff</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>North by Northwest</th>\n",
+       "      <td>4.364458</td>\n",
+       "      <td>4.390641</td>\n",
+       "      <td>0.026183</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Rear Window</th>\n",
+       "      <td>4.484536</td>\n",
+       "      <td>4.472991</td>\n",
+       "      <td>0.011545</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Shawshank Redemption, The</th>\n",
+       "      <td>4.539075</td>\n",
+       "      <td>4.560625</td>\n",
+       "      <td>0.021550</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Usual Suspects, The</th>\n",
+       "      <td>4.513317</td>\n",
+       "      <td>4.518248</td>\n",
+       "      <td>0.004931</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                            F         M      diff\n",
+       "short_title                                            \n",
+       "North by Northwest         4.364458  4.390641  0.026183\n",
+       "Rear Window                4.484536  4.472991  0.011545\n",
+       "Shawshank Redemption, The  4.539075  4.560625  0.021550\n",
+       "Usual Suspects, The        4.513317  4.518248  0.004931"
+      ]
+     },
+     "execution_count": 82,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "date_night"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/liran/anaconda/lib/python2.7/site-packages/ipykernel/__main__.py:2: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame.\n",
+      "Try using .loc[row_indexer,col_indexer] = value instead\n",
+      "\n",
+      "See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy\n",
+      "  from ipykernel import kernelapp as app\n"
+     ]
+    }
+   ],
+   "source": [
+    "#ignore the warning\n",
+    "date_night['mean'] = date_night['M'] + date_night['F']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>gender</th>\n",
+       "      <th>F</th>\n",
+       "      <th>M</th>\n",
+       "      <th>diff</th>\n",
+       "      <th>mean</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>short_title</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>Shawshank Redemption, The</th>\n",
+       "      <td>4.539075</td>\n",
+       "      <td>4.560625</td>\n",
+       "      <td>0.021550</td>\n",
+       "      <td>9.099700</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Usual Suspects, The</th>\n",
+       "      <td>4.513317</td>\n",
+       "      <td>4.518248</td>\n",
+       "      <td>0.004931</td>\n",
+       "      <td>9.031565</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Rear Window</th>\n",
+       "      <td>4.484536</td>\n",
+       "      <td>4.472991</td>\n",
+       "      <td>0.011545</td>\n",
+       "      <td>8.957527</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>North by Northwest</th>\n",
+       "      <td>4.364458</td>\n",
+       "      <td>4.390641</td>\n",
+       "      <td>0.026183</td>\n",
+       "      <td>8.755099</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "gender                            F         M      diff      mean\n",
+       "short_title                                                      \n",
+       "Shawshank Redemption, The  4.539075  4.560625  0.021550  9.099700\n",
+       "Usual Suspects, The        4.513317  4.518248  0.004931  9.031565\n",
+       "Rear Window                4.484536  4.472991  0.011545  8.957527\n",
+       "North by Northwest         4.364458  4.390641  0.026183  8.755099"
+      ]
+     },
+     "execution_count": 84,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "date_night.sort_values('mean', ascending=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

@@ -1,0 +1,1842 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Combining Multiple Excel Files with Pandas"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "A common data wrangling task is to aggregate data from multiple spreadsheets and files.\n",
+    "\n",
+    "This notebook will walk through the basic flow required to parse multiple excel files, combine some data, clean it up and analyze it."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## The Problem\n",
+    "\n",
+    "Here is a diagram showing the challenges with the common process used in businesses all over the world to consolidate data from multiple Excel files, clean up and perform some analysis."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "<img src=\"Excel-File-Processing.png\">"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The typical approach involves cutting and pasting data or writing painful VBA code.\n",
+    "\n",
+    "Python + pandas can be a great alternative that is much more scaleable and powerful."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "<img src=\"Excel-File-Processing-pandas.png\">"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Collecting the Data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's take a look at the files in our input directory, using the convenient shell commands in ipython."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2009-10_Class_Size_-_School-level_Detail.csv\r\n",
+      "311-service-requests.csv\r\n",
+      "Cleaning Up Messy Data.ipynb\r\n",
+      "Combining Excel Files.ipynb\r\n",
+      "Excel-File-Processing-pandas.png\r\n",
+      "Excel-File-Processing.png\r\n",
+      "LifeExpectancy.csv\r\n",
+      "Munging the Titanic.ipynb\r\n",
+      "NYC School Data.ipynb\r\n",
+      "Pivoted.png\r\n",
+      "Reshaping with Pandas.ipynb\r\n",
+      "Rubric for Wrangling.ipynb\r\n",
+      "SAT__College_Board__2010_School_Level_Results.csv\r\n",
+      "School_Attendance_and_Enrollment_Statistics_by_District__2010-11_.csv\r\n",
+      "School_District_Breakdowns.csv\r\n",
+      "School_Progress_Reports_-_All_Schools_-_2009-10.csv\r\n",
+      "Unpivoted.png\r\n",
+      "Untitled.ipynb\r\n",
+      "Wrangling for Tidy Data.ipynb\r\n",
+      "Wrangling with Pandas.ipynb\r\n",
+      "cameras.csv\r\n",
+      "customer-status.xlsx\r\n",
+      "\u001b[34mdata\u001b[m\u001b[m\r\n",
+      "imdb_top_10000.txt\r\n",
+      "movies.dat\r\n",
+      "ratings.dat\r\n",
+      "sales-feb-2014.xlsx\r\n",
+      "sales-jan-2014.xlsx\r\n",
+      "sales-mar-2014.xlsx\r\n",
+      "train.csv\r\n",
+      "users.dat\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!ls"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We only want to look at the sales .xlsx files."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "sales-feb-2014.xlsx sales-jan-2014.xlsx sales-mar-2014.xlsx\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!ls sales*.xlsx"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Use the python glob module to easily list out the files we need"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import glob"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['sales-feb-2014.xlsx', 'sales-jan-2014.xlsx', 'sales-mar-2014.xlsx']"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "glob.glob(\"sales*.xlsx\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's import each of our files and combine them into one file. Panda's `concat` and `append` can do this for us. We'll use append in this example.\n",
+    "\n",
+    "The code snippet below will initialize a blank DataFrame then append all of the individual files into the `all_data` DataFrame."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "all_data = pd.DataFrame()\n",
+    "for f in glob.glob(\"sales*.xlsx\"):\n",
+    "    df = pd.read_excel(f)\n",
+    "    all_data = all_data.append(df,ignore_index=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we have all the data in our `all_data` DataFrame."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>count</th>\n",
+       "      <td>1742.000000</td>\n",
+       "      <td>1742.000000</td>\n",
+       "      <td>1742.000000</td>\n",
+       "      <td>1742.000000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>mean</th>\n",
+       "      <td>485766.487945</td>\n",
+       "      <td>24.319173</td>\n",
+       "      <td>54.985454</td>\n",
+       "      <td>1349.229392</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>std</th>\n",
+       "      <td>223750.660792</td>\n",
+       "      <td>14.502759</td>\n",
+       "      <td>26.108490</td>\n",
+       "      <td>1094.639319</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>min</th>\n",
+       "      <td>141962.000000</td>\n",
+       "      <td>-1.000000</td>\n",
+       "      <td>10.030000</td>\n",
+       "      <td>-97.160000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25%</th>\n",
+       "      <td>257198.000000</td>\n",
+       "      <td>12.000000</td>\n",
+       "      <td>32.132500</td>\n",
+       "      <td>468.592500</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>50%</th>\n",
+       "      <td>527099.000000</td>\n",
+       "      <td>25.000000</td>\n",
+       "      <td>55.465000</td>\n",
+       "      <td>1049.700000</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>75%</th>\n",
+       "      <td>714466.000000</td>\n",
+       "      <td>37.000000</td>\n",
+       "      <td>77.607500</td>\n",
+       "      <td>2074.972500</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>max</th>\n",
+       "      <td>786968.000000</td>\n",
+       "      <td>49.000000</td>\n",
+       "      <td>99.850000</td>\n",
+       "      <td>4824.540000</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "       account number     quantity   unit price    ext price\n",
+       "count     1742.000000  1742.000000  1742.000000  1742.000000\n",
+       "mean    485766.487945    24.319173    54.985454  1349.229392\n",
+       "std     223750.660792    14.502759    26.108490  1094.639319\n",
+       "min     141962.000000    -1.000000    10.030000   -97.160000\n",
+       "25%     257198.000000    12.000000    32.132500   468.592500\n",
+       "50%     527099.000000    25.000000    55.465000  1049.700000\n",
+       "75%     714466.000000    37.000000    77.607500  2074.972500\n",
+       "max     786968.000000    49.000000    99.850000  4824.540000"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data.describe()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "It looks like a complete dataset with no missing values."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>383080</td>\n",
+       "      <td>Will LLC</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>7</td>\n",
+       "      <td>33.69</td>\n",
+       "      <td>235.83</td>\n",
+       "      <td>2014-02-01 09:04:59</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>S1-27722</td>\n",
+       "      <td>11</td>\n",
+       "      <td>21.12</td>\n",
+       "      <td>232.32</td>\n",
+       "      <td>2014-02-01 11:51:46</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-86481</td>\n",
+       "      <td>3</td>\n",
+       "      <td>35.99</td>\n",
+       "      <td>107.97</td>\n",
+       "      <td>2014-02-01 17:24:32</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>23</td>\n",
+       "      <td>78.90</td>\n",
+       "      <td>1814.70</td>\n",
+       "      <td>2014-02-01 19:56:48</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>672390</td>\n",
+       "      <td>Kuhn-Gusikowski</td>\n",
+       "      <td>S1-06532</td>\n",
+       "      <td>48</td>\n",
+       "      <td>55.82</td>\n",
+       "      <td>2679.36</td>\n",
+       "      <td>2014-02-02 03:45:20</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   account number             name       sku  quantity  unit price  ext price  \\\n",
+       "0          383080         Will LLC  B1-20000         7       33.69     235.83   \n",
+       "1          412290    Jerde-Hilpert  S1-27722        11       21.12     232.32   \n",
+       "2          412290    Jerde-Hilpert  B1-86481         3       35.99     107.97   \n",
+       "3          412290    Jerde-Hilpert  B1-20000        23       78.90    1814.70   \n",
+       "4          672390  Kuhn-Gusikowski  S1-06532        48       55.82    2679.36   \n",
+       "\n",
+       "                  date  \n",
+       "0  2014-02-01 09:04:59  \n",
+       "1  2014-02-01 11:51:46  \n",
+       "2  2014-02-01 17:24:32  \n",
+       "3  2014-02-01 19:56:48  \n",
+       "4  2014-02-02 03:45:20  "
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "It is not critical in this example but the best practice is to convert the date column to a date time object."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 1742 entries, 0 to 1741\n",
+      "Data columns (total 7 columns):\n",
+      "account number    1742 non-null int64\n",
+      "name              1742 non-null object\n",
+      "sku               1742 non-null object\n",
+      "quantity          1742 non-null int64\n",
+      "unit price        1742 non-null float64\n",
+      "ext price         1742 non-null float64\n",
+      "date              1742 non-null datetime64[ns]\n",
+      "dtypes: datetime64[ns](1), float64(2), int64(2), object(2)\n",
+      "memory usage: 95.3+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "all_data['date'] = pd.to_datetime(all_data['date'])\n",
+    "all_data.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Combining Data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The next thing we want to do is read in another file that contains the customer status by account. You can think of this as a company's customer segmentation strategy or some other mechanism for identifying their customers.\n",
+    "\n",
+    "First, we read in the data."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>740150</td>\n",
+       "      <td>Barton LLC</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>714466</td>\n",
+       "      <td>Trantow-Barrows</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>218895</td>\n",
+       "      <td>Kulas Inc</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>307599</td>\n",
+       "      <td>Kassulke, Ondricka and Metz</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>729833</td>\n",
+       "      <td>Koepp Ltd</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>146832</td>\n",
+       "      <td>Kiehn-Spinka</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>688981</td>\n",
+       "      <td>Keeling LLC</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>786968</td>\n",
+       "      <td>Frami, Hills and Schmidt</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>239344</td>\n",
+       "      <td>Stokes LLC</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>10</th>\n",
+       "      <td>672390</td>\n",
+       "      <td>Kuhn-Gusikowski</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11</th>\n",
+       "      <td>141962</td>\n",
+       "      <td>Herman LLC</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>12</th>\n",
+       "      <td>424914</td>\n",
+       "      <td>White-Trantow</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13</th>\n",
+       "      <td>527099</td>\n",
+       "      <td>Sanford and Sons</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>14</th>\n",
+       "      <td>642753</td>\n",
+       "      <td>Pollich LLC</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>15</th>\n",
+       "      <td>257198</td>\n",
+       "      <td>Cronin, Oberbrunner and Spencer</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    account number                             name  status\n",
+       "0           740150                       Barton LLC    gold\n",
+       "1           714466                  Trantow-Barrows  silver\n",
+       "2           218895                        Kulas Inc  bronze\n",
+       "3           307599      Kassulke, Ondricka and Metz  bronze\n",
+       "4           412290                    Jerde-Hilpert  bronze\n",
+       "5           729833                        Koepp Ltd  silver\n",
+       "6           146832                     Kiehn-Spinka  silver\n",
+       "7           688981                      Keeling LLC  silver\n",
+       "8           786968         Frami, Hills and Schmidt  silver\n",
+       "9           239344                       Stokes LLC    gold\n",
+       "10          672390                  Kuhn-Gusikowski  silver\n",
+       "11          141962                       Herman LLC    gold\n",
+       "12          424914                    White-Trantow  silver\n",
+       "13          527099                 Sanford and Sons  bronze\n",
+       "14          642753                      Pollich LLC  bronze\n",
+       "15          257198  Cronin, Oberbrunner and Spencer    gold"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "status = pd.read_excel(\"customer-status.xlsx\")\n",
+    "status"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We want to merge this data with our concatenated data set of sales. We use panda's `merge` function and tell it to do a left join which is similar to Excel's vlookup function."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>383080</td>\n",
+       "      <td>Will LLC</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>7</td>\n",
+       "      <td>33.69</td>\n",
+       "      <td>235.83</td>\n",
+       "      <td>2014-02-01 09:04:59</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>S1-27722</td>\n",
+       "      <td>11</td>\n",
+       "      <td>21.12</td>\n",
+       "      <td>232.32</td>\n",
+       "      <td>2014-02-01 11:51:46</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-86481</td>\n",
+       "      <td>3</td>\n",
+       "      <td>35.99</td>\n",
+       "      <td>107.97</td>\n",
+       "      <td>2014-02-01 17:24:32</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>23</td>\n",
+       "      <td>78.90</td>\n",
+       "      <td>1814.70</td>\n",
+       "      <td>2014-02-01 19:56:48</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>672390</td>\n",
+       "      <td>Kuhn-Gusikowski</td>\n",
+       "      <td>S1-06532</td>\n",
+       "      <td>48</td>\n",
+       "      <td>55.82</td>\n",
+       "      <td>2679.36</td>\n",
+       "      <td>2014-02-02 03:45:20</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   account number             name       sku  quantity  unit price  ext price  \\\n",
+       "0          383080         Will LLC  B1-20000         7       33.69     235.83   \n",
+       "1          412290    Jerde-Hilpert  S1-27722        11       21.12     232.32   \n",
+       "2          412290    Jerde-Hilpert  B1-86481         3       35.99     107.97   \n",
+       "3          412290    Jerde-Hilpert  B1-20000        23       78.90    1814.70   \n",
+       "4          672390  Kuhn-Gusikowski  S1-06532        48       55.82    2679.36   \n",
+       "\n",
+       "                 date  status  \n",
+       "0 2014-02-01 09:04:59     NaN  \n",
+       "1 2014-02-01 11:51:46  bronze  \n",
+       "2 2014-02-01 17:24:32  bronze  \n",
+       "3 2014-02-01 19:56:48  bronze  \n",
+       "4 2014-02-02 03:45:20  silver  "
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st = pd.merge(all_data, status, how='left')\n",
+    "all_data_st.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's look at a specific account."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>15</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-47412</td>\n",
+       "      <td>40</td>\n",
+       "      <td>51.01</td>\n",
+       "      <td>2040.40</td>\n",
+       "      <td>2014-02-05 01:20:40</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-06532</td>\n",
+       "      <td>34</td>\n",
+       "      <td>18.69</td>\n",
+       "      <td>635.46</td>\n",
+       "      <td>2014-02-07 09:22:02</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>66</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-27722</td>\n",
+       "      <td>15</td>\n",
+       "      <td>70.23</td>\n",
+       "      <td>1053.45</td>\n",
+       "      <td>2014-02-16 18:24:42</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>78</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S2-34077</td>\n",
+       "      <td>26</td>\n",
+       "      <td>93.35</td>\n",
+       "      <td>2427.10</td>\n",
+       "      <td>2014-02-20 18:45:43</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>80</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-93683</td>\n",
+       "      <td>31</td>\n",
+       "      <td>10.52</td>\n",
+       "      <td>326.12</td>\n",
+       "      <td>2014-02-21 13:55:45</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    account number                          name       sku  quantity  \\\n",
+       "15          737550  Fritsch, Russel and Anderson  S1-47412        40   \n",
+       "25          737550  Fritsch, Russel and Anderson  S1-06532        34   \n",
+       "66          737550  Fritsch, Russel and Anderson  S1-27722        15   \n",
+       "78          737550  Fritsch, Russel and Anderson  S2-34077        26   \n",
+       "80          737550  Fritsch, Russel and Anderson  S1-93683        31   \n",
+       "\n",
+       "    unit price  ext price                date status  \n",
+       "15       51.01    2040.40 2014-02-05 01:20:40    NaN  \n",
+       "25       18.69     635.46 2014-02-07 09:22:02    NaN  \n",
+       "66       70.23    1053.45 2014-02-16 18:24:42    NaN  \n",
+       "78       93.35    2427.10 2014-02-20 18:45:43    NaN  \n",
+       "80       10.52     326.12 2014-02-21 13:55:45    NaN  "
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st[all_data_st[\"account number\"]==737550].head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This account number was not in our status file, so we have a bunch of NaN's. We can decide how we want to handle this situation. For this specific case, let's label all missing accounts as bronze. Use the `fillna`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>383080</td>\n",
+       "      <td>Will LLC</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>7</td>\n",
+       "      <td>33.69</td>\n",
+       "      <td>235.83</td>\n",
+       "      <td>2014-02-01 09:04:59</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>S1-27722</td>\n",
+       "      <td>11</td>\n",
+       "      <td>21.12</td>\n",
+       "      <td>232.32</td>\n",
+       "      <td>2014-02-01 11:51:46</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-86481</td>\n",
+       "      <td>3</td>\n",
+       "      <td>35.99</td>\n",
+       "      <td>107.97</td>\n",
+       "      <td>2014-02-01 17:24:32</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>23</td>\n",
+       "      <td>78.90</td>\n",
+       "      <td>1814.70</td>\n",
+       "      <td>2014-02-01 19:56:48</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>672390</td>\n",
+       "      <td>Kuhn-Gusikowski</td>\n",
+       "      <td>S1-06532</td>\n",
+       "      <td>48</td>\n",
+       "      <td>55.82</td>\n",
+       "      <td>2679.36</td>\n",
+       "      <td>2014-02-02 03:45:20</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   account number             name       sku  quantity  unit price  ext price  \\\n",
+       "0          383080         Will LLC  B1-20000         7       33.69     235.83   \n",
+       "1          412290    Jerde-Hilpert  S1-27722        11       21.12     232.32   \n",
+       "2          412290    Jerde-Hilpert  B1-86481         3       35.99     107.97   \n",
+       "3          412290    Jerde-Hilpert  B1-20000        23       78.90    1814.70   \n",
+       "4          672390  Kuhn-Gusikowski  S1-06532        48       55.82    2679.36   \n",
+       "\n",
+       "                 date  status  \n",
+       "0 2014-02-01 09:04:59  bronze  \n",
+       "1 2014-02-01 11:51:46  bronze  \n",
+       "2 2014-02-01 17:24:32  bronze  \n",
+       "3 2014-02-01 19:56:48  bronze  \n",
+       "4 2014-02-02 03:45:20  silver  "
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st['status'].fillna('bronze',inplace=True)\n",
+    "all_data_st.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Check the data just to make sure we're all good."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>15</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-47412</td>\n",
+       "      <td>40</td>\n",
+       "      <td>51.01</td>\n",
+       "      <td>2040.40</td>\n",
+       "      <td>2014-02-05 01:20:40</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>25</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-06532</td>\n",
+       "      <td>34</td>\n",
+       "      <td>18.69</td>\n",
+       "      <td>635.46</td>\n",
+       "      <td>2014-02-07 09:22:02</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>66</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-27722</td>\n",
+       "      <td>15</td>\n",
+       "      <td>70.23</td>\n",
+       "      <td>1053.45</td>\n",
+       "      <td>2014-02-16 18:24:42</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>78</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S2-34077</td>\n",
+       "      <td>26</td>\n",
+       "      <td>93.35</td>\n",
+       "      <td>2427.10</td>\n",
+       "      <td>2014-02-20 18:45:43</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>80</th>\n",
+       "      <td>737550</td>\n",
+       "      <td>Fritsch, Russel and Anderson</td>\n",
+       "      <td>S1-93683</td>\n",
+       "      <td>31</td>\n",
+       "      <td>10.52</td>\n",
+       "      <td>326.12</td>\n",
+       "      <td>2014-02-21 13:55:45</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "    account number                          name       sku  quantity  \\\n",
+       "15          737550  Fritsch, Russel and Anderson  S1-47412        40   \n",
+       "25          737550  Fritsch, Russel and Anderson  S1-06532        34   \n",
+       "66          737550  Fritsch, Russel and Anderson  S1-27722        15   \n",
+       "78          737550  Fritsch, Russel and Anderson  S2-34077        26   \n",
+       "80          737550  Fritsch, Russel and Anderson  S1-93683        31   \n",
+       "\n",
+       "    unit price  ext price                date  status  \n",
+       "15       51.01    2040.40 2014-02-05 01:20:40  bronze  \n",
+       "25       18.69     635.46 2014-02-07 09:22:02  bronze  \n",
+       "66       70.23    1053.45 2014-02-16 18:24:42  bronze  \n",
+       "78       93.35    2427.10 2014-02-20 18:45:43  bronze  \n",
+       "80       10.52     326.12 2014-02-21 13:55:45  bronze  "
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st[all_data_st[\"account number\"]==737550].head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we have all of the data along with the status column filled in. We can do our normal data manipulations using the full suite of pandas capability."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Using Categories"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "One of the relatively new functions in pandas is support for categorical data. From the pandas, documentation\n",
+    "\n",
+    ">\"Categoricals are a pandas data type, which correspond to categorical variables in statistics: a variable, which can take on only a limited, and usually fixed, number of possible values (categories; levels in R). Examples are gender, social class, blood types, country affiliations, observation time or ratings via Likert scales.\"\n",
+    "\n",
+    "For our purposes, the status field is a good candidate for a category type."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "First, we typecast it to a category using `astype`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "all_data_st[\"status\"] = all_data_st[\"status\"].astype(\"category\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This doesn't immediately appear to change anything yet."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>383080</td>\n",
+       "      <td>Will LLC</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>7</td>\n",
+       "      <td>33.69</td>\n",
+       "      <td>235.83</td>\n",
+       "      <td>2014-02-01 09:04:59</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>S1-27722</td>\n",
+       "      <td>11</td>\n",
+       "      <td>21.12</td>\n",
+       "      <td>232.32</td>\n",
+       "      <td>2014-02-01 11:51:46</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-86481</td>\n",
+       "      <td>3</td>\n",
+       "      <td>35.99</td>\n",
+       "      <td>107.97</td>\n",
+       "      <td>2014-02-01 17:24:32</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>412290</td>\n",
+       "      <td>Jerde-Hilpert</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>23</td>\n",
+       "      <td>78.90</td>\n",
+       "      <td>1814.70</td>\n",
+       "      <td>2014-02-01 19:56:48</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>672390</td>\n",
+       "      <td>Kuhn-Gusikowski</td>\n",
+       "      <td>S1-06532</td>\n",
+       "      <td>48</td>\n",
+       "      <td>55.82</td>\n",
+       "      <td>2679.36</td>\n",
+       "      <td>2014-02-02 03:45:20</td>\n",
+       "      <td>silver</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   account number             name       sku  quantity  unit price  ext price  \\\n",
+       "0          383080         Will LLC  B1-20000         7       33.69     235.83   \n",
+       "1          412290    Jerde-Hilpert  S1-27722        11       21.12     232.32   \n",
+       "2          412290    Jerde-Hilpert  B1-86481         3       35.99     107.97   \n",
+       "3          412290    Jerde-Hilpert  B1-20000        23       78.90    1814.70   \n",
+       "4          672390  Kuhn-Gusikowski  S1-06532        48       55.82    2679.36   \n",
+       "\n",
+       "                 date  status  \n",
+       "0 2014-02-01 09:04:59  bronze  \n",
+       "1 2014-02-01 11:51:46  bronze  \n",
+       "2 2014-02-01 17:24:32  bronze  \n",
+       "3 2014-02-01 19:56:48  bronze  \n",
+       "4 2014-02-02 03:45:20  silver  "
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Buy you can see that it is a new data type."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "account number             int64\n",
+       "name                      object\n",
+       "sku                       object\n",
+       "quantity                   int64\n",
+       "unit price               float64\n",
+       "ext price                float64\n",
+       "date              datetime64[ns]\n",
+       "status                  category\n",
+       "dtype: object"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.dtypes"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Categories get more interesting when you assign order to the categories. Right now, if we call sort on the column, it will sort alphabetically. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>383080</td>\n",
+       "      <td>Will LLC</td>\n",
+       "      <td>B1-20000</td>\n",
+       "      <td>7</td>\n",
+       "      <td>33.69</td>\n",
+       "      <td>235.83</td>\n",
+       "      <td>2014-02-01 09:04:59</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>910</th>\n",
+       "      <td>307599</td>\n",
+       "      <td>Kassulke, Ondricka and Metz</td>\n",
+       "      <td>S2-16558</td>\n",
+       "      <td>14</td>\n",
+       "      <td>16.24</td>\n",
+       "      <td>227.36</td>\n",
+       "      <td>2014-06-04 23:18:41</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>921</th>\n",
+       "      <td>527099</td>\n",
+       "      <td>Sanford and Sons</td>\n",
+       "      <td>B1-38851</td>\n",
+       "      <td>12</td>\n",
+       "      <td>76.52</td>\n",
+       "      <td>918.24</td>\n",
+       "      <td>2014-06-07 02:11:29</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>923</th>\n",
+       "      <td>604255</td>\n",
+       "      <td>Halvorson, Crona and Champlin</td>\n",
+       "      <td>S1-82801</td>\n",
+       "      <td>22</td>\n",
+       "      <td>29.51</td>\n",
+       "      <td>649.22</td>\n",
+       "      <td>2014-06-07 07:50:43</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>924</th>\n",
+       "      <td>604255</td>\n",
+       "      <td>Halvorson, Crona and Champlin</td>\n",
+       "      <td>S2-83881</td>\n",
+       "      <td>18</td>\n",
+       "      <td>93.29</td>\n",
+       "      <td>1679.22</td>\n",
+       "      <td>2014-06-08 01:45:26</td>\n",
+       "      <td>bronze</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "     account number                           name       sku  quantity  \\\n",
+       "0            383080                       Will LLC  B1-20000         7   \n",
+       "910          307599    Kassulke, Ondricka and Metz  S2-16558        14   \n",
+       "921          527099               Sanford and Sons  B1-38851        12   \n",
+       "923          604255  Halvorson, Crona and Champlin  S1-82801        22   \n",
+       "924          604255  Halvorson, Crona and Champlin  S2-83881        18   \n",
+       "\n",
+       "     unit price  ext price                date  status  \n",
+       "0         33.69     235.83 2014-02-01 09:04:59  bronze  \n",
+       "910       16.24     227.36 2014-06-04 23:18:41  bronze  \n",
+       "921       76.52     918.24 2014-06-07 02:11:29  bronze  \n",
+       "923       29.51     649.22 2014-06-07 07:50:43  bronze  \n",
+       "924       93.29    1679.22 2014-06-08 01:45:26  bronze  "
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.sort_values(by=[\"status\"]).head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We use set_categories to tell it the order we want to use for this category object. In this case, we use the Olympic medal ordering."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    " all_data_st[\"status\"].cat.set_categories([ \"gold\",\"silver\",\"bronze\"],inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now, we can sort it so that gold shows on top."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>account number</th>\n",
+       "      <th>name</th>\n",
+       "      <th>sku</th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "      <th>date</th>\n",
+       "      <th>status</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>1205</th>\n",
+       "      <td>740150</td>\n",
+       "      <td>Barton LLC</td>\n",
+       "      <td>B1-33364</td>\n",
+       "      <td>46</td>\n",
+       "      <td>83.85</td>\n",
+       "      <td>3857.10</td>\n",
+       "      <td>2014-08-15 01:51:17</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>359</th>\n",
+       "      <td>740150</td>\n",
+       "      <td>Barton LLC</td>\n",
+       "      <td>S1-47412</td>\n",
+       "      <td>27</td>\n",
+       "      <td>36.12</td>\n",
+       "      <td>975.24</td>\n",
+       "      <td>2014-01-27 05:48:37</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>888</th>\n",
+       "      <td>740150</td>\n",
+       "      <td>Barton LLC</td>\n",
+       "      <td>B1-05914</td>\n",
+       "      <td>24</td>\n",
+       "      <td>13.53</td>\n",
+       "      <td>324.72</td>\n",
+       "      <td>2014-05-31 05:34:08</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1345</th>\n",
+       "      <td>141962</td>\n",
+       "      <td>Herman LLC</td>\n",
+       "      <td>S2-83881</td>\n",
+       "      <td>44</td>\n",
+       "      <td>70.34</td>\n",
+       "      <td>3094.96</td>\n",
+       "      <td>2014-09-22 19:47:07</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>355</th>\n",
+       "      <td>239344</td>\n",
+       "      <td>Stokes LLC</td>\n",
+       "      <td>S2-82423</td>\n",
+       "      <td>34</td>\n",
+       "      <td>92.67</td>\n",
+       "      <td>3150.78</td>\n",
+       "      <td>2014-01-26 12:10:58</td>\n",
+       "      <td>gold</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      account number        name       sku  quantity  unit price  ext price  \\\n",
+       "1205          740150  Barton LLC  B1-33364        46       83.85    3857.10   \n",
+       "359           740150  Barton LLC  S1-47412        27       36.12     975.24   \n",
+       "888           740150  Barton LLC  B1-05914        24       13.53     324.72   \n",
+       "1345          141962  Herman LLC  S2-83881        44       70.34    3094.96   \n",
+       "355           239344  Stokes LLC  S2-82423        34       92.67    3150.78   \n",
+       "\n",
+       "                    date status  \n",
+       "1205 2014-08-15 01:51:17   gold  \n",
+       "359  2014-01-27 05:48:37   gold  \n",
+       "888  2014-05-31 05:34:08   gold  \n",
+       "1345 2014-09-22 19:47:07   gold  \n",
+       "355  2014-01-26 12:10:58   gold  "
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.sort_values(by=[\"status\"]).head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "count       1742\n",
+       "unique         3\n",
+       "top       bronze\n",
+       "freq         764\n",
+       "Name: status, dtype: object"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st[\"status\"].describe()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For instance, if you want to take a quick look at how your top tier customers are performing compared to the bottom. Use `groupby` to give us the average of the values."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>quantity</th>\n",
+       "      <th>unit price</th>\n",
+       "      <th>ext price</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>status</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>gold</th>\n",
+       "      <td>24.680723</td>\n",
+       "      <td>52.431205</td>\n",
+       "      <td>1325.566867</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>silver</th>\n",
+       "      <td>23.814241</td>\n",
+       "      <td>55.724241</td>\n",
+       "      <td>1339.477539</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>bronze</th>\n",
+       "      <td>24.589005</td>\n",
+       "      <td>55.470733</td>\n",
+       "      <td>1367.757736</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "         quantity  unit price    ext price\n",
+       "status                                    \n",
+       "gold    24.680723   52.431205  1325.566867\n",
+       "silver  23.814241   55.724241  1339.477539\n",
+       "bronze  24.589005   55.470733  1367.757736"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.groupby([\"status\"])[\"quantity\",\"unit price\",\"ext price\"].mean()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Of course, you can run multiple aggregation functions on the data to get really useful information "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr>\n",
+       "      <th></th>\n",
+       "      <th colspan=\"3\" halign=\"left\">quantity</th>\n",
+       "      <th colspan=\"3\" halign=\"left\">unit price</th>\n",
+       "      <th colspan=\"3\" halign=\"left\">ext price</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th></th>\n",
+       "      <th>sum</th>\n",
+       "      <th>mean</th>\n",
+       "      <th>std</th>\n",
+       "      <th>sum</th>\n",
+       "      <th>mean</th>\n",
+       "      <th>std</th>\n",
+       "      <th>sum</th>\n",
+       "      <th>mean</th>\n",
+       "      <th>std</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>status</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>gold</th>\n",
+       "      <td>8194</td>\n",
+       "      <td>24.680723</td>\n",
+       "      <td>14.478670</td>\n",
+       "      <td>17407.16</td>\n",
+       "      <td>52.431205</td>\n",
+       "      <td>26.244516</td>\n",
+       "      <td>440088.20</td>\n",
+       "      <td>1325.566867</td>\n",
+       "      <td>1074.564373</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>silver</th>\n",
+       "      <td>15384</td>\n",
+       "      <td>23.814241</td>\n",
+       "      <td>14.519044</td>\n",
+       "      <td>35997.86</td>\n",
+       "      <td>55.724241</td>\n",
+       "      <td>26.053569</td>\n",
+       "      <td>865302.49</td>\n",
+       "      <td>1339.477539</td>\n",
+       "      <td>1094.908529</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>bronze</th>\n",
+       "      <td>18786</td>\n",
+       "      <td>24.589005</td>\n",
+       "      <td>14.506515</td>\n",
+       "      <td>42379.64</td>\n",
+       "      <td>55.470733</td>\n",
+       "      <td>26.062149</td>\n",
+       "      <td>1044966.91</td>\n",
+       "      <td>1367.757736</td>\n",
+       "      <td>1104.129089</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "       quantity                       unit price                        \\\n",
+       "            sum       mean        std        sum       mean        std   \n",
+       "status                                                                   \n",
+       "gold       8194  24.680723  14.478670   17407.16  52.431205  26.244516   \n",
+       "silver    15384  23.814241  14.519044   35997.86  55.724241  26.053569   \n",
+       "bronze    18786  24.589005  14.506515   42379.64  55.470733  26.062149   \n",
+       "\n",
+       "         ext price                            \n",
+       "               sum         mean          std  \n",
+       "status                                        \n",
+       "gold     440088.20  1325.566867  1074.564373  \n",
+       "silver   865302.49  1339.477539  1094.908529  \n",
+       "bronze  1044966.91  1367.757736  1104.129089  "
+      ]
+     },
+     "execution_count": 28,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.groupby([\"status\"])[\"quantity\",\"unit price\",\"ext price\"].agg([np.sum,np.mean, np.std])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "So, what does this tell you? One observation is that more units are sold to our bronze customers than gold. Even when you look at the total dollar value associated with bronze vs. gold, it looks backwards.\n",
+    "\n",
+    "Maybe we should look at how many bronze customers there are and see what is going on.\n",
+    "\n",
+    "First, we'll filter out the unique accounts and see how many gold, silver and bronze customers there are."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "status\n",
+       "gold      4\n",
+       "silver    7\n",
+       "bronze    9\n",
+       "Name: name, dtype: int64"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "all_data_st.drop_duplicates(subset=[\"account number\",\"name\"]).ix[:,[0,1,7]].groupby([\"status\"])[\"name\"].count()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Ok. This makes a little more sense. We see that there are nine bronze customers and only four gold customers. That is probably why the volumes are so skewed towards the bronze customers."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

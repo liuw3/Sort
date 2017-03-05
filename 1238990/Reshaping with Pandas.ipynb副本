@@ -1,0 +1,1606 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Reshaping with Pandas\n",
+    "\n",
+    "`pivot`, `melt`, `stack`, `unstack`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Outline\n",
+    "\n",
+    "- **`melt`**: the \"stacked\" format\n",
+    "- **`pivot`**: the \"wide\" format\n",
+    "- Hierarchical index (multi-index)\n",
+    "    - **`unstack()`**\n",
+    "    - **`stack()`**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Stacked format with `melt`\n",
+    "\n",
+    "Cheese data from [http://media.eatwisconsincheese.com/](http://media.eatwisconsincheese.com/assets/images/pdf/WisconsinDairyData.pdf)\n",
+    "\n",
+    "pandas reference [http://pandas.pydata.org](http://pandas.pydata.org/pandas-docs/stable/reshaping.html)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>percent</th>\n",
+       "      <th>prod</th>\n",
+       "      <th>rank</th>\n",
+       "      <th>type</th>\n",
+       "      <th>product</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>18.8</td>\n",
+       "      <td>794538</td>\n",
+       "      <td>1</td>\n",
+       "      <td>American</td>\n",
+       "      <td>cheese</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>29.5</td>\n",
+       "      <td>1348636</td>\n",
+       "      <td>2</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>cheese</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>34.2</td>\n",
+       "      <td>50108</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>cheese</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>26.7</td>\n",
+       "      <td>3054</td>\n",
+       "      <td>2</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>cheese</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>25.2</td>\n",
+       "      <td>898721</td>\n",
+       "      <td>2</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>cheese</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   percent     prod  rank        type product\n",
+       "0     18.8   794538     1    American  cheese\n",
+       "1     29.5  1348636     2     Italian  cheese\n",
+       "2     34.2    50108     1    Muenster  cheese\n",
+       "3     26.7     3054     2       brick  cheese\n",
+       "4     25.2   898721     2  Mozzerella  cheese"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese = pd.DataFrame({'type' : ['American', 'Italian','Muenster','brick','Mozzerella'],\n",
+    "                    'prod' : [794538,1348636,50108,3054,898721],\n",
+    "                    'percent' : [18.8, 29.5, 34.2, 26.7, 25.2],\n",
+    "                    'rank' : [1,2,1,2,2]})\n",
+    "cheese['product'] = 'cheese'\n",
+    "cheese.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th>prod</th>\n",
+       "      <th>percent</th>\n",
+       "      <th>rank</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>794538</td>\n",
+       "      <td>18.8</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>1348636</td>\n",
+       "      <td>29.5</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>50108</td>\n",
+       "      <td>34.2</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>3054</td>\n",
+       "      <td>26.7</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>898721</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  product        type     prod  percent  rank\n",
+       "0  cheese    American   794538     18.8     1\n",
+       "1  cheese     Italian  1348636     29.5     2\n",
+       "2  cheese    Muenster    50108     34.2     1\n",
+       "3  cheese       brick     3054     26.7     2\n",
+       "4  cheese  Mozzerella   898721     25.2     2"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese = cheese.reindex(columns=['product','type','prod','percent','rank'])\n",
+    "cheese.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th>rank</th>\n",
+       "      <th>variable</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>1</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>794538.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>2</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>1348636.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>1</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>50108.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>2</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>3054.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>2</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>898721.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>1</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>18.8</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>2</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>29.5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>1</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>34.2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>2</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>26.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>2</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>25.2</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  product        type  rank variable      value\n",
+       "0  cheese    American     1     prod   794538.0\n",
+       "1  cheese     Italian     2     prod  1348636.0\n",
+       "2  cheese    Muenster     1     prod    50108.0\n",
+       "3  cheese       brick     2     prod     3054.0\n",
+       "4  cheese  Mozzerella     2     prod   898721.0\n",
+       "5  cheese    American     1  percent       18.8\n",
+       "6  cheese     Italian     2  percent       29.5\n",
+       "7  cheese    Muenster     1  percent       34.2\n",
+       "8  cheese       brick     2  percent       26.7\n",
+       "9  cheese  Mozzerella     2  percent       25.2"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack = pd.melt(cheese, id_vars=['product','type','rank'])\n",
+    "cheese_stack"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th>variable</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>794538.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>1348636.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>50108.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>3054.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>898721.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>18.8</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>29.5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>34.2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>26.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>25.2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>10</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>12</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>14</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   product        type variable      value\n",
+       "0   cheese    American     prod   794538.0\n",
+       "1   cheese     Italian     prod  1348636.0\n",
+       "2   cheese    Muenster     prod    50108.0\n",
+       "3   cheese       brick     prod     3054.0\n",
+       "4   cheese  Mozzerella     prod   898721.0\n",
+       "5   cheese    American  percent       18.8\n",
+       "6   cheese     Italian  percent       29.5\n",
+       "7   cheese    Muenster  percent       34.2\n",
+       "8   cheese       brick  percent       26.7\n",
+       "9   cheese  Mozzerella  percent       25.2\n",
+       "10  cheese    American     rank        1.0\n",
+       "11  cheese     Italian     rank        2.0\n",
+       "12  cheese    Muenster     rank        1.0\n",
+       "13  cheese       brick     rank        2.0\n",
+       "14  cheese  Mozzerella     rank        2.0"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack = pd.melt(cheese, id_vars=['product','type'])\n",
+    "cheese_stack"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## `pivot` back to wide format"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th>variable</th>\n",
+       "      <th>percent</th>\n",
+       "      <th>prod</th>\n",
+       "      <th>rank</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>type</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>American</th>\n",
+       "      <td>18.8</td>\n",
+       "      <td>794538.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Italian</th>\n",
+       "      <td>29.5</td>\n",
+       "      <td>1348636.0</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mozzerella</th>\n",
+       "      <td>25.2</td>\n",
+       "      <td>898721.0</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Muenster</th>\n",
+       "      <td>34.2</td>\n",
+       "      <td>50108.0</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>brick</th>\n",
+       "      <td>26.7</td>\n",
+       "      <td>3054.0</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "variable    percent       prod  rank\n",
+       "type                                \n",
+       "American       18.8   794538.0   1.0\n",
+       "Italian        29.5  1348636.0   2.0\n",
+       "Mozzerella     25.2   898721.0   2.0\n",
+       "Muenster       34.2    50108.0   1.0\n",
+       "brick          26.7     3054.0   2.0"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.pivot(index='type', columns='variable', values='value')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We lost the `product` column."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## multi-index, stack, unstack"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th>variable</th>\n",
+       "      <th>value</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>794538.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>1348636.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>50108.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>3054.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>898721.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>18.8</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>29.5</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>34.2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>26.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>25.2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>10</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>12</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Muenster</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>13</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>brick</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>14</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Mozzerella</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   product        type variable      value\n",
+       "0   cheese    American     prod   794538.0\n",
+       "1   cheese     Italian     prod  1348636.0\n",
+       "2   cheese    Muenster     prod    50108.0\n",
+       "3   cheese       brick     prod     3054.0\n",
+       "4   cheese  Mozzerella     prod   898721.0\n",
+       "5   cheese    American  percent       18.8\n",
+       "6   cheese     Italian  percent       29.5\n",
+       "7   cheese    Muenster  percent       34.2\n",
+       "8   cheese       brick  percent       26.7\n",
+       "9   cheese  Mozzerella  percent       25.2\n",
+       "10  cheese    American     rank        1.0\n",
+       "11  cheese     Italian     rank        2.0\n",
+       "12  cheese    Muenster     rank        1.0\n",
+       "13  cheese       brick     rank        2.0\n",
+       "14  cheese  Mozzerella     rank        2.0"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>prod</th>\n",
+       "      <th>percent</th>\n",
+       "      <th>rank</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"5\" valign=\"top\">cheese</th>\n",
+       "      <th>American</th>\n",
+       "      <td>794538</td>\n",
+       "      <td>18.8</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Italian</th>\n",
+       "      <td>1348636</td>\n",
+       "      <td>29.5</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Muenster</th>\n",
+       "      <td>50108</td>\n",
+       "      <td>34.2</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>brick</th>\n",
+       "      <td>3054</td>\n",
+       "      <td>26.7</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mozzerella</th>\n",
+       "      <td>898721</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>2</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                       prod  percent  rank\n",
+       "product type                              \n",
+       "cheese  American     794538     18.8     1\n",
+       "        Italian     1348636     29.5     2\n",
+       "        Muenster      50108     34.2     1\n",
+       "        brick          3054     26.7     2\n",
+       "        Mozzerella   898721     25.2     2"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese = cheese.set_index(['product','type'])\n",
+    "cheese.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "product  type             \n",
+       "cheese   American  prod        794538.0\n",
+       "                   percent         18.8\n",
+       "                   rank             1.0\n",
+       "         Italian   prod       1348636.0\n",
+       "                   percent         29.5\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack = cheese.stack()\n",
+    "cheese_stack.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Accessing data with multi-index"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "pandas.core.series.Series"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(cheese_stack)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "product  type             \n",
+       "cheese   American  prod        794538.0\n",
+       "                   percent         18.8\n",
+       "                   rank             1.0\n",
+       "         Italian   prod       1348636.0\n",
+       "                   percent         29.5\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "('cheese', 'American', 'prod')\n",
+      "('cheese', 'American', 'percent')\n",
+      "('cheese', 'American', 'rank')\n",
+      "('cheese', 'Italian', 'prod')\n",
+      "('cheese', 'Italian', 'percent')\n",
+      "('cheese', 'Italian', 'rank')\n",
+      "('cheese', 'Muenster', 'prod')\n",
+      "('cheese', 'Muenster', 'percent')\n",
+      "('cheese', 'Muenster', 'rank')\n",
+      "('cheese', 'brick', 'prod')\n",
+      "('cheese', 'brick', 'percent')\n",
+      "('cheese', 'brick', 'rank')\n",
+      "('cheese', 'Mozzerella', 'prod')\n",
+      "('cheese', 'Mozzerella', 'percent')\n",
+      "('cheese', 'Mozzerella', 'rank')\n"
+     ]
+    }
+   ],
+   "source": [
+    "for x in cheese_stack.index.values:\n",
+    "    print x"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "type             \n",
+       "American  prod        794538.0\n",
+       "          percent         18.8\n",
+       "          rank             1.0\n",
+       "Italian   prod       1348636.0\n",
+       "          percent         29.5\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.ix['cheese'].head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "prod       3054.0\n",
+       "percent      26.7\n",
+       "rank          2.0\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.ix['cheese']['brick'].head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "2.0"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.ix['cheese']['brick']['rank']"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Back to DataFrame `reset_index` "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th>level_2</th>\n",
+       "      <th>0</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>794538.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>18.8</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>American</td>\n",
+       "      <td>rank</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>prod</td>\n",
+       "      <td>1348636.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>cheese</td>\n",
+       "      <td>Italian</td>\n",
+       "      <td>percent</td>\n",
+       "      <td>29.5</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  product      type  level_2          0\n",
+       "0  cheese  American     prod   794538.0\n",
+       "1  cheese  American  percent       18.8\n",
+       "2  cheese  American     rank        1.0\n",
+       "3  cheese   Italian     prod  1348636.0\n",
+       "4  cheese   Italian  percent       29.5"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.reset_index().head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We could rename the columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['product', 'type', 'level_2', 0], dtype=object)"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.reset_index().columns.values"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## unstack"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "product  type               \n",
+       "cheese   American    prod        794538.0\n",
+       "                     percent         18.8\n",
+       "                     rank             1.0\n",
+       "         Italian     prod       1348636.0\n",
+       "                     percent         29.5\n",
+       "                     rank             2.0\n",
+       "         Muenster    prod         50108.0\n",
+       "                     percent         34.2\n",
+       "                     rank             1.0\n",
+       "         brick       prod          3054.0\n",
+       "                     percent         26.7\n",
+       "                     rank             2.0\n",
+       "         Mozzerella  prod        898721.0\n",
+       "                     percent         25.2\n",
+       "                     rank             2.0\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>prod</th>\n",
+       "      <th>percent</th>\n",
+       "      <th>rank</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"5\" valign=\"top\">cheese</th>\n",
+       "      <th>American</th>\n",
+       "      <td>794538.0</td>\n",
+       "      <td>18.8</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Italian</th>\n",
+       "      <td>1348636.0</td>\n",
+       "      <td>29.5</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mozzerella</th>\n",
+       "      <td>898721.0</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Muenster</th>\n",
+       "      <td>50108.0</td>\n",
+       "      <td>34.2</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>brick</th>\n",
+       "      <td>3054.0</td>\n",
+       "      <td>26.7</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                         prod  percent  rank\n",
+       "product type                                \n",
+       "cheese  American     794538.0     18.8   1.0\n",
+       "        Italian     1348636.0     29.5   2.0\n",
+       "        Mozzerella   898721.0     25.2   2.0\n",
+       "        Muenster      50108.0     34.2   1.0\n",
+       "        brick          3054.0     26.7   2.0"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.unstack().head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "By default, it unstacks the **last level**."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>type</th>\n",
+       "      <th>American</th>\n",
+       "      <th>Italian</th>\n",
+       "      <th>Mozzerella</th>\n",
+       "      <th>Muenster</th>\n",
+       "      <th>brick</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>product</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"3\" valign=\"top\">cheese</th>\n",
+       "      <th>prod</th>\n",
+       "      <td>794538.0</td>\n",
+       "      <td>1348636.0</td>\n",
+       "      <td>898721.0</td>\n",
+       "      <td>50108.0</td>\n",
+       "      <td>3054.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>percent</th>\n",
+       "      <td>18.8</td>\n",
+       "      <td>29.5</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>34.2</td>\n",
+       "      <td>26.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>rank</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "type             American    Italian  Mozzerella  Muenster   brick\n",
+       "product                                                           \n",
+       "cheese  prod     794538.0  1348636.0    898721.0   50108.0  3054.0\n",
+       "        percent      18.8       29.5        25.2      34.2    26.7\n",
+       "        rank          1.0        2.0         2.0       1.0     2.0"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.unstack(1).head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th>prod</th>\n",
+       "      <th>percent</th>\n",
+       "      <th>rank</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>product</th>\n",
+       "      <th>type</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"5\" valign=\"top\">cheese</th>\n",
+       "      <th>American</th>\n",
+       "      <td>794538.0</td>\n",
+       "      <td>18.8</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Italian</th>\n",
+       "      <td>1348636.0</td>\n",
+       "      <td>29.5</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Mozzerella</th>\n",
+       "      <td>898721.0</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>Muenster</th>\n",
+       "      <td>50108.0</td>\n",
+       "      <td>34.2</td>\n",
+       "      <td>1.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>brick</th>\n",
+       "      <td>3054.0</td>\n",
+       "      <td>26.7</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                         prod  percent  rank\n",
+       "product type                                \n",
+       "cheese  American     794538.0     18.8   1.0\n",
+       "        Italian     1348636.0     29.5   2.0\n",
+       "        Mozzerella   898721.0     25.2   2.0\n",
+       "        Muenster      50108.0     34.2   1.0\n",
+       "        brick          3054.0     26.7   2.0"
+      ]
+     },
+     "execution_count": 21,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.unstack().head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "product  type             \n",
+       "cheese   American  prod        794538.0\n",
+       "                   percent         18.8\n",
+       "                   rank             1.0\n",
+       "         Italian   prod       1348636.0\n",
+       "                   percent         29.5\n",
+       "dtype: float64"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>type</th>\n",
+       "      <th>American</th>\n",
+       "      <th>Italian</th>\n",
+       "      <th>Mozzerella</th>\n",
+       "      <th>Muenster</th>\n",
+       "      <th>brick</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>product</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th rowspan=\"3\" valign=\"top\">cheese</th>\n",
+       "      <th>prod</th>\n",
+       "      <td>794538.0</td>\n",
+       "      <td>1348636.0</td>\n",
+       "      <td>898721.0</td>\n",
+       "      <td>50108.0</td>\n",
+       "      <td>3054.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>percent</th>\n",
+       "      <td>18.8</td>\n",
+       "      <td>29.5</td>\n",
+       "      <td>25.2</td>\n",
+       "      <td>34.2</td>\n",
+       "      <td>26.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>rank</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>2.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "type             American    Italian  Mozzerella  Muenster   brick\n",
+       "product                                                           \n",
+       "cheese  prod     794538.0  1348636.0    898721.0   50108.0  3054.0\n",
+       "        percent      18.8       29.5        25.2      34.2    26.7\n",
+       "        rank          1.0        2.0         2.0       1.0     2.0"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cheese_stack.unstack('type').head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "css": [
+   ""
+  ],
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

@@ -1,0 +1,2680 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Predicting SAT Scores for NYC Schools"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Goal\n",
+    "\n",
+    "Use datasets from [NYC Open Data](https://data.cityofnewyork.us/) to build a unified, clean dataset ready for use with machine learning algorithms to predict student SAT scores on a per school basis.\n",
+    "\n",
+    "First, let's ingest the data and get the lay of the land. The datasets are from [NYC Open Data](https://nycopendata.socrata.com/)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "\n",
+    "# Load the data\n",
+    "dsProgReports = pd.read_csv('School_Progress_Reports_-_All_Schools_-_2009-10.csv')\n",
+    "dsDistrict = pd.read_csv('School_District_Breakdowns.csv')\n",
+    "dsClassSize = pd.read_csv('2009-10_Class_Size_-_School-level_Detail.csv')\n",
+    "dsAttendEnroll = pd.read_csv('School_Attendance_and_Enrollment_Statistics_by_District__2010-11_.csv')[:-2] #last two rows are bad\n",
+    "dsSATs = pd.read_csv('SAT__College_Board__2010_School_Level_Results.csv') # Dependent"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Outline\n",
+    "\n",
+    "Pandas has read the data files with no issues. Next let's create a rough map of where we are going.\n",
+    "\n",
+    "We have five datasets here, each with information about either schools or districts. We're going to join all of this information together into a clean data file, with one row for each school, joined with as much information we can gather about that school & its district. This will include the mean SAT scores (Critical Reading, Math, and Writing) for each school in 2010. Those are the \"dependent variable\" targets for the prediction problem.\n",
+    "\n",
+    "Let's look at the datasets."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 460 entries, 0 to 459\n",
+      "Data columns (total 6 columns):\n",
+      "DBN                      460 non-null object\n",
+      "School Name              460 non-null object\n",
+      "Number of Test Takers    460 non-null object\n",
+      "Critical Reading Mean    460 non-null object\n",
+      "Mathematics Mean         460 non-null object\n",
+      "Writing Mean             460 non-null object\n",
+      "dtypes: object(6)\n",
+      "memory usage: 21.6+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "dsSATs.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "dsSATs contains the SAT scores we want to be able to predict along with `School Name` and something called `DBN`. That turns out to be an important key code that we can use to `join` the files."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 1677 entries, 0 to 1676\n",
+      "Data columns (total 17 columns):\n",
+      "DBN                                     1677 non-null object\n",
+      "DISTRICT                                1677 non-null int64\n",
+      "SCHOOL                                  1677 non-null object\n",
+      "PRINCIPAL                               1676 non-null object\n",
+      "PROGRESS REPORT TYPE                    1677 non-null object\n",
+      "SCHOOL LEVEL*                           1677 non-null object\n",
+      "PEER INDEX*                             1595 non-null float64\n",
+      "2009-2010 OVERALL GRADE                 1534 non-null object\n",
+      "2009-2010 OVERALL SCORE                 1534 non-null float64\n",
+      "2009-2010 ENVIRONMENT CATEGORY SCORE    1534 non-null float64\n",
+      "2009-2010 ENVIRONMENT GRADE             1534 non-null object\n",
+      "2009-2010 PERFORMANCE CATEGORY SCORE    1534 non-null float64\n",
+      "2009-2010 PERFORMANCE GRADE             1534 non-null object\n",
+      "2009-2010 PROGRESS CATEGORY SCORE       1534 non-null float64\n",
+      "2009-2010 PROGRESS GRADE                1534 non-null object\n",
+      "2009-2010 ADDITIONAL CREDIT             1534 non-null float64\n",
+      "2008-09 PROGRESS REPORT GRADE           1400 non-null object\n",
+      "dtypes: float64(6), int64(1), object(10)\n",
+      "memory usage: 222.8+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "dsProgReports.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 32 entries, 0 to 31\n",
+      "Data columns (total 45 columns):\n",
+      "JURISDICTION NAME                      32 non-null object\n",
+      "COUNT PARTICIPANTS                     32 non-null int64\n",
+      "COUNT FEMALE                           32 non-null int64\n",
+      "PERCENT FEMALE                         32 non-null float64\n",
+      "COUNT MALE                             32 non-null int64\n",
+      "PERCENT MALE                           32 non-null float64\n",
+      "COUNT GENDER UNKNOWN                   32 non-null int64\n",
+      "PERCENT GENDER UNKNOWN                 32 non-null int64\n",
+      "COUNT GENDER TOTAL                     32 non-null int64\n",
+      "PERCENT GENDER TOTAL                   32 non-null int64\n",
+      "COUNT PACIFIC ISLANDER                 32 non-null int64\n",
+      "COUNT HISPANIC LATINO                  32 non-null int64\n",
+      "PERCENT HISPANIC LATINO                32 non-null float64\n",
+      "COUNT AMERICAN INDIAN                  32 non-null int64\n",
+      "PERCENT AMERICAN INDIAN                32 non-null float64\n",
+      "COUNT ASIAN NON HISPANIC               32 non-null int64\n",
+      "PERCENT ASIAN NON HISPANIC             32 non-null float64\n",
+      "COUNT WHITE NON HISPANIC               32 non-null int64\n",
+      "PERCENT WHITE NON HISPANIC             32 non-null float64\n",
+      "COUNT BLACK NON HISPANIC               32 non-null int64\n",
+      "PERCENT BLACK NON HISPANIC             32 non-null float64\n",
+      "COUNT OTHER ETHNICITY                  32 non-null int64\n",
+      "PERCENT OTHER ETHNICITY                32 non-null float64\n",
+      "COUNT ETHNICITY UNKNOWN                32 non-null int64\n",
+      "PERCENT ETHNICITY UNKNOWN              32 non-null float64\n",
+      "COUNT ETHNICITY TOTAL                  32 non-null int64\n",
+      "PERCENT ETHNICITY TOTAL                32 non-null int64\n",
+      "COUNT PERMANENT RESIDENT ALIEN         32 non-null int64\n",
+      "PERCENT PERMANENT RESIDENT ALIEN       32 non-null float64\n",
+      "COUNT US CITIZEN                       32 non-null int64\n",
+      "PERCENT US CITIZEN                     32 non-null float64\n",
+      "COUNT OTHER CITIZEN STATUS             32 non-null int64\n",
+      "PERCENT OTHER CITIZEN STATUS           32 non-null float64\n",
+      "COUNT CITIZEN STATUS UNKNOWN           32 non-null int64\n",
+      "PERCENT CITIZEN STATUS UNKNOWN         32 non-null int64\n",
+      "COUNT CITIZEN STATUS TOTAL             32 non-null int64\n",
+      "PERCENT CITIZEN STATUS TOTAL           32 non-null int64\n",
+      "COUNT RECEIVES PUBLIC ASSISTANCE       32 non-null int64\n",
+      "PERCENT RECEIVES PUBLIC ASSISTANCE     32 non-null float64\n",
+      "COUNT NRECEIVES PUBLIC ASSISTANCE      32 non-null int64\n",
+      "PERCENT NRECEIVES PUBLIC ASSISTANCE    32 non-null float64\n",
+      "COUNT PUBLIC ASSISTANCE UNKNOWN        32 non-null int64\n",
+      "PERCENT PUBLIC ASSISTANCE UNKNOWN      32 non-null int64\n",
+      "COUNT PUBLIC ASSISTANCE TOTAL          32 non-null int64\n",
+      "PERCENT PUBLIC ASSISTANCE TOTAL        32 non-null int64\n",
+      "dtypes: float64(14), int64(30), object(1)\n",
+      "memory usage: 11.3+ KB\n"
+     ]
+    }
+   ],
+   "source": [
+    "dsDistrict.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 25476 entries, 0 to 25475\n",
+      "Data columns (total 16 columns):\n",
+      "BORO                                    25476 non-null object\n",
+      "CSD                                     25476 non-null int64\n",
+      "SCHOOL CODE                             25476 non-null object\n",
+      "SCHOOL NAME                             25476 non-null object\n",
+      "GRADE                                   24012 non-null object\n",
+      "PROGRAM TYPE                            24012 non-null object\n",
+      "CORE SUBJECT (MS CORE and 9-12 ONLY)    24012 non-null object\n",
+      "CORE COURSE (MS CORE and 9-12 ONLY)     24012 non-null object\n",
+      "SERVICE CATEGORY(K-9* ONLY)             24012 non-null object\n",
+      "NUMBER OF CLASSES                       24012 non-null float64\n",
+      "TOTAL REGISTER                          24012 non-null float64\n",
+      "AVERAGE CLASS SIZE                      24012 non-null float64\n",
+      "SIZE OF SMALLEST CLASS                  24012 non-null float64\n",
+      "SIZE OF LARGEST CLASS                   24012 non-null float64\n",
+      "DATA SOURCE                             24012 non-null object\n",
+      "SCHOOLWIDE PUPIL-TEACHER RATIO          1464 non-null float64\n",
+      "dtypes: float64(6), int64(1), object(9)\n",
+      "memory usage: 3.1+ MB\n"
+     ]
+    }
+   ],
+   "source": [
+    "dsClassSize.info()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<class 'pandas.core.frame.DataFrame'>\n",
+      "RangeIndex: 33 entries, 0 to 32\n",
+      "Data columns (total 3 columns):\n",
+      "District                  33 non-null object\n",
+      "YTD % Attendance (Avg)    33 non-null object\n",
+      "YTD Enrollment(Avg)       33 non-null int64\n",
+      "dtypes: int64(1), object(2)\n",
+      "memory usage: 864.0+ bytes\n"
+     ]
+    }
+   ],
+   "source": [
+    "dsAttendEnroll.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Joining Strategy\n",
+    "\n",
+    "We are going to build a dataset to predict Critical Reading Mean, Mathematics Mean, and Writing Mean for each school (identified by DBN).\n",
+    "\n",
+    "After digging around [NYC Open Data](https://nycopendata.socrata.com/) and looking at the file info, we can identify the following join strategy (using SQL-esque pseudocode):\n",
+    "\n",
+    "    dsSATS join dsClassSize on dsSATs['DBN'] = dsClassSize['SCHOOL CODE']\n",
+    "    join dsProgReports on dsSATs['DBN'] = dsProgReports['DBN']\n",
+    "    join dsDistrct on dsProgReports['DISTRICT'] = dsDistrict['JURISDICTION NAME']\n",
+    "    join dsAttendEnroll on dsProgReports['DISTRICT'] = dsAttendEnroll['District']\n",
+    "\n",
+    "Now that we have the strategy identified at a high level, there are a number of details we have to identify and take care of first.\n",
+    "\n",
+    "## Primary Keys - Schools\n",
+    "\n",
+    "Before we can join these three datasets together, we need to normalize their primary keys. Below we see the mismatch between the way the DBN (school id) field is represented in the different datasets."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "      <th>8</th>\n",
+       "      <th>9</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>DBN</th>\n",
+       "      <td>01M015</td>\n",
+       "      <td>01M019</td>\n",
+       "      <td>01M020</td>\n",
+       "      <td>01M034</td>\n",
+       "      <td>01M063</td>\n",
+       "      <td>01M064</td>\n",
+       "      <td>01M110</td>\n",
+       "      <td>01M134</td>\n",
+       "      <td>01M137</td>\n",
+       "      <td>01M140</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>DBN</th>\n",
+       "      <td>01M292</td>\n",
+       "      <td>01M448</td>\n",
+       "      <td>01M450</td>\n",
+       "      <td>01M458</td>\n",
+       "      <td>01M509</td>\n",
+       "      <td>01M515</td>\n",
+       "      <td>01M539</td>\n",
+       "      <td>01M650</td>\n",
+       "      <td>01M696</td>\n",
+       "      <td>02M047</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                  0       1       2       3       4       5       6       7  \\\n",
+       "DBN          01M015  01M019  01M020  01M034  01M063  01M064  01M110  01M134   \n",
+       "DBN          01M292  01M448  01M450  01M458  01M509  01M515  01M539  01M650   \n",
+       "SCHOOL CODE    M015    M015    M015    M015    M015    M015    M015    M015   \n",
+       "\n",
+       "                  8       9  \n",
+       "DBN          01M137  01M140  \n",
+       "DBN          01M696  02M047  \n",
+       "SCHOOL CODE    M015    M015  "
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(data=[dsProgReports['DBN'][0:10], dsSATs['DBN'][0:10], dsClassSize['SCHOOL CODE'][0:10]])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We need to normalize the keys to correct this problem.\n",
+    "\n",
+    "It looks like we can `join` to `School Code` if we strip the first two characters off the `DBN`s."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "dsProgReports.DBN = dsProgReports.DBN.map(lambda x: x[2:])\n",
+    "dsSATs.DBN = dsSATs.DBN.map(lambda x: x[2:])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's check the keys again."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "      <th>8</th>\n",
+       "      <th>9</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>DBN</th>\n",
+       "      <td>M015</td>\n",
+       "      <td>M019</td>\n",
+       "      <td>M020</td>\n",
+       "      <td>M034</td>\n",
+       "      <td>M063</td>\n",
+       "      <td>M064</td>\n",
+       "      <td>M110</td>\n",
+       "      <td>M134</td>\n",
+       "      <td>M137</td>\n",
+       "      <td>M140</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>DBN</th>\n",
+       "      <td>M292</td>\n",
+       "      <td>M448</td>\n",
+       "      <td>M450</td>\n",
+       "      <td>M458</td>\n",
+       "      <td>M509</td>\n",
+       "      <td>M515</td>\n",
+       "      <td>M539</td>\n",
+       "      <td>M650</td>\n",
+       "      <td>M696</td>\n",
+       "      <td>M047</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "      <td>M015</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                0     1     2     3     4     5     6     7     8     9\n",
+       "DBN          M015  M019  M020  M034  M063  M064  M110  M134  M137  M140\n",
+       "DBN          M292  M448  M450  M458  M509  M515  M539  M650  M696  M047\n",
+       "SCHOOL CODE  M015  M015  M015  M015  M015  M015  M015  M015  M015  M015"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(data=[dsProgReports['DBN'][0:10], dsSATs['DBN'][0:10], dsClassSize['SCHOOL CODE'][0:10]])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Primary Keys - Districts\n",
+    "\n",
+    "We have a similar story with the district international keys. Again, we need to normalize the keys. The only additional complexity here is that `dsProgReports['DISTRICT']` is typed numerically, whereas the other two district keys are typed as string. We will do some type conversions following the key munging.\n",
+    "\n",
+    "First, let's look at the key mismatches:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "      <th>8</th>\n",
+       "      <th>9</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>DISTRICT</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>JURISDICTION NAME</th>\n",
+       "      <td>CSD 01 Manhattan</td>\n",
+       "      <td>CSD 02 Manhattan</td>\n",
+       "      <td>CSD 03 Manhattan</td>\n",
+       "      <td>CSD 04 Manhattan</td>\n",
+       "      <td>CSD 05 Manhattan</td>\n",
+       "      <td>CSD 06 Manhattan</td>\n",
+       "      <td>CSD 07 Bronx</td>\n",
+       "      <td>CSD 08 Bronx</td>\n",
+       "      <td>CSD 09 Bronx</td>\n",
+       "      <td>CSD 10 Bronx</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>District</th>\n",
+       "      <td>DISTRICT 01</td>\n",
+       "      <td>DISTRICT 02</td>\n",
+       "      <td>DISTRICT 03</td>\n",
+       "      <td>DISTRICT 04</td>\n",
+       "      <td>DISTRICT 05</td>\n",
+       "      <td>DISTRICT 06</td>\n",
+       "      <td>DISTRICT 07</td>\n",
+       "      <td>DISTRICT 08</td>\n",
+       "      <td>DISTRICT 09</td>\n",
+       "      <td>DISTRICT 10</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                  0                 1                 2  \\\n",
+       "DISTRICT                          1                 1                 1   \n",
+       "JURISDICTION NAME  CSD 01 Manhattan  CSD 02 Manhattan  CSD 03 Manhattan   \n",
+       "District                DISTRICT 01       DISTRICT 02       DISTRICT 03   \n",
+       "\n",
+       "                                  3                 4                 5  \\\n",
+       "DISTRICT                          1                 1                 1   \n",
+       "JURISDICTION NAME  CSD 04 Manhattan  CSD 05 Manhattan  CSD 06 Manhattan   \n",
+       "District                DISTRICT 04       DISTRICT 05       DISTRICT 06   \n",
+       "\n",
+       "                              6             7             8             9  \n",
+       "DISTRICT                      1             1             1             1  \n",
+       "JURISDICTION NAME  CSD 07 Bronx  CSD 08 Bronx  CSD 09 Bronx  CSD 10 Bronx  \n",
+       "District            DISTRICT 07   DISTRICT 08   DISTRICT 09   DISTRICT 10  "
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(data=[dsProgReports['DISTRICT'][:10], dsDistrict['JURISDICTION NAME'][:10], dsAttendEnroll['District'][:10]])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### String wrangling\n",
+    "\n",
+    "This is going to require some more complex string manipulation. There is a Python library called \"re\" that helps us work with what are called \"regular expressions.\" Don't worry if this looks odd or difficult. You can learn about regular expressions with a bit of Web searching."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Note the `astype(int)` at the end of these lines to coerce the column to a numeric type."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import re\n",
+    "dsDistrict['JURISDICTION NAME'] = dsDistrict['JURISDICTION NAME'].map(lambda x: re.match( r'([A-Za-z]*\\s)([0-9]*)', x).group(2)).astype(int)\n",
+    "dsAttendEnroll.District = dsAttendEnroll.District.map(lambda x: x[-2:]).astype(int)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's check again."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>0</th>\n",
+       "      <th>1</th>\n",
+       "      <th>2</th>\n",
+       "      <th>3</th>\n",
+       "      <th>4</th>\n",
+       "      <th>5</th>\n",
+       "      <th>6</th>\n",
+       "      <th>7</th>\n",
+       "      <th>8</th>\n",
+       "      <th>9</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>DISTRICT</th>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>JURISDICTION NAME</th>\n",
+       "      <td>1</td>\n",
+       "      <td>2</td>\n",
+       "      <td>3</td>\n",
+       "      <td>4</td>\n",
+       "      <td>5</td>\n",
+       "      <td>6</td>\n",
+       "      <td>7</td>\n",
+       "      <td>8</td>\n",
+       "      <td>9</td>\n",
+       "      <td>10</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>District</th>\n",
+       "      <td>1</td>\n",
+       "      <td>2</td>\n",
+       "      <td>3</td>\n",
+       "      <td>4</td>\n",
+       "      <td>5</td>\n",
+       "      <td>6</td>\n",
+       "      <td>7</td>\n",
+       "      <td>8</td>\n",
+       "      <td>9</td>\n",
+       "      <td>10</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                   0  1  2  3  4  5  6  7  8   9\n",
+       "DISTRICT           1  1  1  1  1  1  1  1  1   1\n",
+       "JURISDICTION NAME  1  2  3  4  5  6  7  8  9  10\n",
+       "District           1  2  3  4  5  6  7  8  9  10"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.DataFrame(data=[dsProgReports['DISTRICT'][:10], dsDistrict['JURISDICTION NAME'][:10], dsAttendEnroll['District'][:10]])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Additional Cleanup\n",
+    "\n",
+    "At this point we could do the joins, but there is still messiness in the data. \n",
+    "\n",
+    "First, let's reindex the DataFrames so the semantics come out a bit cleaner."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "dsProgReports = dsProgReports.set_index('DBN')\n",
+    "dsDistrict = dsDistrict.set_index('JURISDICTION NAME')\n",
+    "dsClassSize = dsClassSize.set_index('SCHOOL CODE')\n",
+    "dsAttendEnroll = dsAttendEnroll.set_index('District')\n",
+    "dsSATs = dsSATs.set_index('DBN')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>School Name</th>\n",
+       "      <th>Number of Test Takers</th>\n",
+       "      <th>Critical Reading Mean</th>\n",
+       "      <th>Mathematics Mean</th>\n",
+       "      <th>Writing Mean</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>DBN</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>M292</th>\n",
+       "      <td>Henry Street School for International Studies</td>\n",
+       "      <td>31</td>\n",
+       "      <td>391</td>\n",
+       "      <td>425</td>\n",
+       "      <td>385</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M448</th>\n",
+       "      <td>University Neighborhood High School</td>\n",
+       "      <td>60</td>\n",
+       "      <td>394</td>\n",
+       "      <td>419</td>\n",
+       "      <td>387</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M450</th>\n",
+       "      <td>East Side Community High School</td>\n",
+       "      <td>69</td>\n",
+       "      <td>418</td>\n",
+       "      <td>431</td>\n",
+       "      <td>402</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M458</th>\n",
+       "      <td>SATELLITE ACADEMY FORSYTH ST</td>\n",
+       "      <td>26</td>\n",
+       "      <td>385</td>\n",
+       "      <td>370</td>\n",
+       "      <td>378</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M509</th>\n",
+       "      <td>CMSP HIGH SCHOOL</td>\n",
+       "      <td>s</td>\n",
+       "      <td>s</td>\n",
+       "      <td>s</td>\n",
+       "      <td>s</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                                         School Name Number of Test Takers  \\\n",
+       "DBN                                                                          \n",
+       "M292  Henry Street School for International Studies                     31   \n",
+       "M448            University Neighborhood High School                     60   \n",
+       "M450                East Side Community High School                     69   \n",
+       "M458                   SATELLITE ACADEMY FORSYTH ST                     26   \n",
+       "M509                               CMSP HIGH SCHOOL                      s   \n",
+       "\n",
+       "     Critical Reading Mean Mathematics Mean Writing Mean  \n",
+       "DBN                                                       \n",
+       "M292                   391              425          385  \n",
+       "M448                   394              419          387  \n",
+       "M450                   418              431          402  \n",
+       "M458                   385              370          378  \n",
+       "M509                     s                s            s  "
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsSATs.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>BORO</th>\n",
+       "      <th>CSD</th>\n",
+       "      <th>SCHOOL NAME</th>\n",
+       "      <th>GRADE</th>\n",
+       "      <th>PROGRAM TYPE</th>\n",
+       "      <th>CORE SUBJECT (MS CORE and 9-12 ONLY)</th>\n",
+       "      <th>CORE COURSE (MS CORE and 9-12 ONLY)</th>\n",
+       "      <th>SERVICE CATEGORY(K-9* ONLY)</th>\n",
+       "      <th>NUMBER OF CLASSES</th>\n",
+       "      <th>TOTAL REGISTER</th>\n",
+       "      <th>AVERAGE CLASS SIZE</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS</th>\n",
+       "      <th>SIZE OF LARGEST CLASS</th>\n",
+       "      <th>DATA SOURCE</th>\n",
+       "      <th>SCHOOLWIDE PUPIL-TEACHER RATIO</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>0K</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>0K</td>\n",
+       "      <td>CTT</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>01</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>01</td>\n",
+       "      <td>CTT</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>02</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            BORO  CSD                SCHOOL NAME GRADE  PROGRAM TYPE  \\\n",
+       "SCHOOL CODE                                                            \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     0K       GEN ED   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     0K          CTT   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     01       GEN ED   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     01          CTT   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     02       GEN ED   \n",
+       "\n",
+       "            CORE SUBJECT (MS CORE and 9-12 ONLY)  \\\n",
+       "SCHOOL CODE                                        \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "\n",
+       "            CORE COURSE (MS CORE and 9-12 ONLY) SERVICE CATEGORY(K-9* ONLY)  \\\n",
+       "SCHOOL CODE                                                                   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "\n",
+       "             NUMBER OF CLASSES  TOTAL REGISTER  AVERAGE CLASS SIZE  \\\n",
+       "SCHOOL CODE                                                          \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            11.0                11.0   \n",
+       "M015                       1.0            17.0                17.0   \n",
+       "M015                       1.0            16.0                16.0   \n",
+       "\n",
+       "             SIZE OF SMALLEST CLASS  SIZE OF LARGEST CLASS DATA SOURCE  \\\n",
+       "SCHOOL CODE                                                              \n",
+       "M015                           21.0                   21.0         ATS   \n",
+       "M015                           21.0                   21.0         ATS   \n",
+       "M015                           11.0                   11.0         ATS   \n",
+       "M015                           17.0                   17.0         ATS   \n",
+       "M015                           16.0                   16.0         ATS   \n",
+       "\n",
+       "             SCHOOLWIDE PUPIL-TEACHER RATIO  \n",
+       "SCHOOL CODE                                  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  "
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsClassSize.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>COUNT PARTICIPANTS</th>\n",
+       "      <th>COUNT FEMALE</th>\n",
+       "      <th>PERCENT FEMALE</th>\n",
+       "      <th>COUNT MALE</th>\n",
+       "      <th>PERCENT MALE</th>\n",
+       "      <th>COUNT GENDER UNKNOWN</th>\n",
+       "      <th>PERCENT GENDER UNKNOWN</th>\n",
+       "      <th>COUNT GENDER TOTAL</th>\n",
+       "      <th>PERCENT GENDER TOTAL</th>\n",
+       "      <th>COUNT PACIFIC ISLANDER</th>\n",
+       "      <th>...</th>\n",
+       "      <th>COUNT CITIZEN STATUS TOTAL</th>\n",
+       "      <th>PERCENT CITIZEN STATUS TOTAL</th>\n",
+       "      <th>COUNT RECEIVES PUBLIC ASSISTANCE</th>\n",
+       "      <th>PERCENT RECEIVES PUBLIC ASSISTANCE</th>\n",
+       "      <th>COUNT NRECEIVES PUBLIC ASSISTANCE</th>\n",
+       "      <th>PERCENT NRECEIVES PUBLIC ASSISTANCE</th>\n",
+       "      <th>COUNT PUBLIC ASSISTANCE UNKNOWN</th>\n",
+       "      <th>PERCENT PUBLIC ASSISTANCE UNKNOWN</th>\n",
+       "      <th>COUNT PUBLIC ASSISTANCE TOTAL</th>\n",
+       "      <th>PERCENT PUBLIC ASSISTANCE TOTAL</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>JURISDICTION NAME</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>11</td>\n",
+       "      <td>4</td>\n",
+       "      <td>0.36</td>\n",
+       "      <td>7</td>\n",
+       "      <td>0.64</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>11</td>\n",
+       "      <td>100</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>11</td>\n",
+       "      <td>100</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0.00</td>\n",
+       "      <td>11</td>\n",
+       "      <td>1.00</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>11</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>124</td>\n",
+       "      <td>70</td>\n",
+       "      <td>0.56</td>\n",
+       "      <td>54</td>\n",
+       "      <td>0.44</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>124</td>\n",
+       "      <td>100</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>124</td>\n",
+       "      <td>100</td>\n",
+       "      <td>38</td>\n",
+       "      <td>0.31</td>\n",
+       "      <td>86</td>\n",
+       "      <td>0.69</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>124</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>38</td>\n",
+       "      <td>26</td>\n",
+       "      <td>0.68</td>\n",
+       "      <td>12</td>\n",
+       "      <td>0.32</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>38</td>\n",
+       "      <td>100</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>38</td>\n",
+       "      <td>100</td>\n",
+       "      <td>14</td>\n",
+       "      <td>0.37</td>\n",
+       "      <td>24</td>\n",
+       "      <td>0.63</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>38</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>20</td>\n",
+       "      <td>13</td>\n",
+       "      <td>0.65</td>\n",
+       "      <td>7</td>\n",
+       "      <td>0.35</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>20</td>\n",
+       "      <td>100</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>20</td>\n",
+       "      <td>100</td>\n",
+       "      <td>8</td>\n",
+       "      <td>0.40</td>\n",
+       "      <td>12</td>\n",
+       "      <td>0.60</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>20</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>7</td>\n",
+       "      <td>4</td>\n",
+       "      <td>0.57</td>\n",
+       "      <td>3</td>\n",
+       "      <td>0.43</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>7</td>\n",
+       "      <td>100</td>\n",
+       "      <td>0</td>\n",
+       "      <td>...</td>\n",
+       "      <td>7</td>\n",
+       "      <td>100</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0.14</td>\n",
+       "      <td>6</td>\n",
+       "      <td>0.86</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>7</td>\n",
+       "      <td>100</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 44 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                   COUNT PARTICIPANTS  COUNT FEMALE  PERCENT FEMALE  \\\n",
+       "JURISDICTION NAME                                                     \n",
+       "1                                  11             4            0.36   \n",
+       "2                                 124            70            0.56   \n",
+       "3                                  38            26            0.68   \n",
+       "4                                  20            13            0.65   \n",
+       "5                                   7             4            0.57   \n",
+       "\n",
+       "                   COUNT MALE  PERCENT MALE  COUNT GENDER UNKNOWN  \\\n",
+       "JURISDICTION NAME                                                   \n",
+       "1                           7          0.64                     0   \n",
+       "2                          54          0.44                     0   \n",
+       "3                          12          0.32                     0   \n",
+       "4                           7          0.35                     0   \n",
+       "5                           3          0.43                     0   \n",
+       "\n",
+       "                   PERCENT GENDER UNKNOWN  COUNT GENDER TOTAL  \\\n",
+       "JURISDICTION NAME                                               \n",
+       "1                                       0                  11   \n",
+       "2                                       0                 124   \n",
+       "3                                       0                  38   \n",
+       "4                                       0                  20   \n",
+       "5                                       0                   7   \n",
+       "\n",
+       "                   PERCENT GENDER TOTAL  COUNT PACIFIC ISLANDER  \\\n",
+       "JURISDICTION NAME                                                 \n",
+       "1                                   100                       0   \n",
+       "2                                   100                       0   \n",
+       "3                                   100                       0   \n",
+       "4                                   100                       0   \n",
+       "5                                   100                       0   \n",
+       "\n",
+       "                                ...                 \\\n",
+       "JURISDICTION NAME               ...                  \n",
+       "1                               ...                  \n",
+       "2                               ...                  \n",
+       "3                               ...                  \n",
+       "4                               ...                  \n",
+       "5                               ...                  \n",
+       "\n",
+       "                   COUNT CITIZEN STATUS TOTAL  PERCENT CITIZEN STATUS TOTAL  \\\n",
+       "JURISDICTION NAME                                                             \n",
+       "1                                          11                           100   \n",
+       "2                                         124                           100   \n",
+       "3                                          38                           100   \n",
+       "4                                          20                           100   \n",
+       "5                                           7                           100   \n",
+       "\n",
+       "                   COUNT RECEIVES PUBLIC ASSISTANCE  \\\n",
+       "JURISDICTION NAME                                     \n",
+       "1                                                 0   \n",
+       "2                                                38   \n",
+       "3                                                14   \n",
+       "4                                                 8   \n",
+       "5                                                 1   \n",
+       "\n",
+       "                   PERCENT RECEIVES PUBLIC ASSISTANCE  \\\n",
+       "JURISDICTION NAME                                       \n",
+       "1                                                0.00   \n",
+       "2                                                0.31   \n",
+       "3                                                0.37   \n",
+       "4                                                0.40   \n",
+       "5                                                0.14   \n",
+       "\n",
+       "                   COUNT NRECEIVES PUBLIC ASSISTANCE  \\\n",
+       "JURISDICTION NAME                                      \n",
+       "1                                                 11   \n",
+       "2                                                 86   \n",
+       "3                                                 24   \n",
+       "4                                                 12   \n",
+       "5                                                  6   \n",
+       "\n",
+       "                   PERCENT NRECEIVES PUBLIC ASSISTANCE  \\\n",
+       "JURISDICTION NAME                                        \n",
+       "1                                                 1.00   \n",
+       "2                                                 0.69   \n",
+       "3                                                 0.63   \n",
+       "4                                                 0.60   \n",
+       "5                                                 0.86   \n",
+       "\n",
+       "                   COUNT PUBLIC ASSISTANCE UNKNOWN  \\\n",
+       "JURISDICTION NAME                                    \n",
+       "1                                                0   \n",
+       "2                                                0   \n",
+       "3                                                0   \n",
+       "4                                                0   \n",
+       "5                                                0   \n",
+       "\n",
+       "                   PERCENT PUBLIC ASSISTANCE UNKNOWN  \\\n",
+       "JURISDICTION NAME                                      \n",
+       "1                                                  0   \n",
+       "2                                                  0   \n",
+       "3                                                  0   \n",
+       "4                                                  0   \n",
+       "5                                                  0   \n",
+       "\n",
+       "                   COUNT PUBLIC ASSISTANCE TOTAL  \\\n",
+       "JURISDICTION NAME                                  \n",
+       "1                                             11   \n",
+       "2                                            124   \n",
+       "3                                             38   \n",
+       "4                                             20   \n",
+       "5                                              7   \n",
+       "\n",
+       "                   PERCENT PUBLIC ASSISTANCE TOTAL  \n",
+       "JURISDICTION NAME                                   \n",
+       "1                                              100  \n",
+       "2                                              100  \n",
+       "3                                              100  \n",
+       "4                                              100  \n",
+       "5                                              100  \n",
+       "\n",
+       "[5 rows x 44 columns]"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsDistrict.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's take a look at one of our target variables. We see an \"s\" value which shouldn't be there."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['391', '394', '418', '385', 's', '314', '568', '411', '630', '405',\n",
+       "       '422', '382', '397', '424', '381', '409', '421', '401', '395',\n",
+       "       '465', '484', '495', '523', '561', '475', '454', '555', '512',\n",
+       "       '369', '446', '419', '379', '387', '367', '674', '451', '371',\n",
+       "       '420', '415', '345', '390', '404', '416', '343', '372', '468',\n",
+       "       '513', '400', '355', '425', '429', '433', '393', '378', '370',\n",
+       "       '427', '399', '406', '364', '374', '376', '357', '573', '558',\n",
+       "       '407', '410', '481', '414', '485', '360', '362', '380', '366',\n",
+       "       '402', '349', '423', '592', '383', '388', '436', '342', '322',\n",
+       "       '335', '460', '377', '389', '359', '358', '373', '356', '447',\n",
+       "       '347', '413', '332', '365', '313', '333', '386', '375', '632',\n",
+       "       '340', '635', '363', '432', '354', '344', '331', '368', '408',\n",
+       "       '291', '346', '588', '403', '453', '323', '476', '536', '353',\n",
+       "       '302', '361', '445', '392', '412', '459', '328', '435', '398',\n",
+       "       '450', '327', '472', '426', '493', '449', '543', '396', '545',\n",
+       "       '444', '325', '438', '637', '434', '486', '457', '455', '350',\n",
+       "       '525', '613', '506', '440', '502', '560', '508', '431', '437',\n",
+       "       '439', '463', '474', '638'], dtype=object)"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsSATs['Critical Reading Mean'].unique()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To filter the \"bad\" data, we first create a boolean vector mask. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "386"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mask = dsSATs['Critical Reading Mean'].map(lambda x: x != 's')\n",
+    "mask.sum()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To be thorough, we should also explore the other variables. It turns out that the problem is solved simply by masking on this one variable - trust me!"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['391', '394', '418', '385', '314', '568', '411', '630', '405',\n",
+       "       '422', '382', '397', '424', '381', '409', '421', '401', '395',\n",
+       "       '465', '484', '495', '523', '561', '475', '454', '555', '512',\n",
+       "       '369', '446', '419', '379', '387', '367', '674', '451', '371',\n",
+       "       '420', '415', '345', '390', '404', '416', '343', '372', '468',\n",
+       "       '513', '400', '355', '425', '429', '433', '393', '378', '370',\n",
+       "       '427', '399', '406', '364', '374', '376', '357', '573', '558',\n",
+       "       '407', '410', '481', '414', '485', '360', '362', '380', '366',\n",
+       "       '402', '349', '423', '592', '383', '388', '436', '342', '322',\n",
+       "       '335', '460', '377', '389', '359', '358', '373', '356', '447',\n",
+       "       '347', '413', '332', '365', '313', '333', '386', '375', '632',\n",
+       "       '340', '635', '363', '432', '354', '344', '331', '368', '408',\n",
+       "       '291', '346', '588', '403', '453', '323', '476', '536', '353',\n",
+       "       '302', '361', '445', '392', '412', '459', '328', '435', '398',\n",
+       "       '450', '327', '472', '426', '493', '449', '543', '396', '545',\n",
+       "       '444', '325', '438', '637', '434', '486', '457', '455', '350',\n",
+       "       '525', '613', '506', '440', '502', '560', '508', '431', '437',\n",
+       "       '439', '463', '474', '638'], dtype=object)"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsSATs = dsSATs[mask]\n",
+    "dsSATs['Critical Reading Mean'].unique()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "That looks good.\n",
+    "\n",
+    "Now let's cast the key fields to integers to that we can do all of the `join`s."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "dsSATs['Number of Test Takers'] = dsSATs['Number of Test Takers'].astype(int)\n",
+    "dsSATs['Critical Reading Mean'] = dsSATs['Critical Reading Mean'].astype(int)\n",
+    "dsSATs['Mathematics Mean'] = dsSATs['Mathematics Mean'].astype(int)\n",
+    "dsSATs['Writing Mean'] = dsSATs['Writing Mean'].astype(int)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Transforming variables to enable one row per school\n",
+    "\n",
+    "dsClassSize will be a many-to-one join with dsSATs because dsClassSize contains multiple entries per school. We need to summarize and build features from this data in order to get one row per school that will join neatly to dsSATs.\n",
+    "\n",
+    "Additionally, the data has an irregular format, consisting of a number of rows per school describing different class sizes, then a final row for that school which contains no data except for a number in the final column, SCHOOLWIDE PUPIL-TEACHER RATIO.\n",
+    "\n",
+    "We need to extract the SCHOOLWIDE PUPIL-TEACHER RATIO rows, at which point we'll have a regular format and can build variables via aggregate functions. We'll also drop any variables that can't be easily summarized or aggregated and likely have no bearing on the SAT scores (like School Name)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "First, let's look at the data."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>BORO</th>\n",
+       "      <th>CSD</th>\n",
+       "      <th>SCHOOL NAME</th>\n",
+       "      <th>GRADE</th>\n",
+       "      <th>PROGRAM TYPE</th>\n",
+       "      <th>CORE SUBJECT (MS CORE and 9-12 ONLY)</th>\n",
+       "      <th>CORE COURSE (MS CORE and 9-12 ONLY)</th>\n",
+       "      <th>SERVICE CATEGORY(K-9* ONLY)</th>\n",
+       "      <th>NUMBER OF CLASSES</th>\n",
+       "      <th>TOTAL REGISTER</th>\n",
+       "      <th>AVERAGE CLASS SIZE</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS</th>\n",
+       "      <th>SIZE OF LARGEST CLASS</th>\n",
+       "      <th>DATA SOURCE</th>\n",
+       "      <th>SCHOOLWIDE PUPIL-TEACHER RATIO</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>0K</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>0K</td>\n",
+       "      <td>CTT</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>01</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>01</td>\n",
+       "      <td>CTT</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>02</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>ATS</td>\n",
+       "      <td>NaN</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            BORO  CSD                SCHOOL NAME GRADE  PROGRAM TYPE  \\\n",
+       "SCHOOL CODE                                                            \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     0K       GEN ED   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     0K          CTT   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     01       GEN ED   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     01          CTT   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     02       GEN ED   \n",
+       "\n",
+       "            CORE SUBJECT (MS CORE and 9-12 ONLY)  \\\n",
+       "SCHOOL CODE                                        \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "\n",
+       "            CORE COURSE (MS CORE and 9-12 ONLY) SERVICE CATEGORY(K-9* ONLY)  \\\n",
+       "SCHOOL CODE                                                                   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "\n",
+       "             NUMBER OF CLASSES  TOTAL REGISTER  AVERAGE CLASS SIZE  \\\n",
+       "SCHOOL CODE                                                          \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            11.0                11.0   \n",
+       "M015                       1.0            17.0                17.0   \n",
+       "M015                       1.0            16.0                16.0   \n",
+       "\n",
+       "             SIZE OF SMALLEST CLASS  SIZE OF LARGEST CLASS DATA SOURCE  \\\n",
+       "SCHOOL CODE                                                              \n",
+       "M015                           21.0                   21.0         ATS   \n",
+       "M015                           21.0                   21.0         ATS   \n",
+       "M015                           11.0                   11.0         ATS   \n",
+       "M015                           17.0                   17.0         ATS   \n",
+       "M015                           16.0                   16.0         ATS   \n",
+       "\n",
+       "             SCHOOLWIDE PUPIL-TEACHER RATIO  \n",
+       "SCHOOL CODE                                  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  \n",
+       "M015                                    NaN  "
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsClassSize.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Next we'll extract the Pupil-Teacher Ratio."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([  nan,   8.9,  10.5,  12.7,   9.6,   8.1,   9.8,  13.6,  11.7,\n",
+       "         9.1,  11.4,  11.1,  15.7,  12.1,  12.8,  12.3,   9.3,  11.9,\n",
+       "        12.4,  14.1,  14.6,  13.2,  12.6,  11. ,  16.8,  17. ,  16.7,\n",
+       "        15.4,  14.2,  15.3,  15.2,  11.6,  13. ,  14.5,  14.9,  14. ,\n",
+       "        18.4,  16.6,  11.3,  15.9,  14.7,  18.3,  16.3,  12. ,  16.4,\n",
+       "        16.5,  17.9,  10.8,  12.9,  13.5,  12.5,  15.5,  15.1,  19.1,\n",
+       "        17.2,  18.7,  18.8,  15.6,  16.1,  19.7,  13.7,  16.2,  15.8,\n",
+       "        18. ,  11.5,  14.4,  22.1,  17.4,  19.5,  14.8,  13.1,  19. ,\n",
+       "        18.5,  13.4,  17.7,  10.4,  13.3,  10.7,  15. ,  17.1,  11.8,\n",
+       "        14.3,   7.3,   9.9,  20.8,  20.3,   8.8,  20.7,  12.2,  21.6,\n",
+       "        10.9,  10.2,  10.3,  13.8,   8.5,   5.9,   7.5,   8.4,  17.6,\n",
+       "        10.1,   6.5,   8.7,   9.2,  24.1,  11.2,   7.1,  13.9,  17.8,\n",
+       "        20.6,  10. ,  10.6,   9. ,   9.5,  20.2,   6.7,   8.2,   9.4,\n",
+       "        17.5,   9.7,  16.9,  16. ,  19.8,   5.7,  20. ,  18.1,  19.3,\n",
+       "        18.6,  20.9,   7.4,  20.5,   8.6,  21.7,  18.2,   5.8,   5.1,\n",
+       "         6.9,   8.3,  17.3,  21.2,  19.6,   5.4,  19.2,  22.2,  21.8,\n",
+       "        20.1,   7.6,  21. ,  19.9,  22.7,  19.4,  22.6,  21.1,  23.2,\n",
+       "        18.9,  20.4])"
+      ]
+     },
+     "execution_count": 23,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsPupilTeacher = dsClassSize.filter(['SCHOOLWIDE PUPIL-TEACHER RATIO'])\n",
+    "dsPupilTeacher['SCHOOLWIDE PUPIL-TEACHER RATIO'].unique()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Filter out any missing or negative or zero values for `SCHOOLWIDE PUPIL-TEACHER RATIO`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([  8.9,  10.5,  12.7,   9.6,   8.1,   9.8,  13.6,  11.7,   9.1,\n",
+       "        11.4,  11.1,  15.7,  12.1,  12.8,  12.3,   9.3,  11.9,  12.4,\n",
+       "        14.1,  14.6,  13.2,  12.6,  11. ,  16.8,  17. ,  16.7,  15.4,\n",
+       "        14.2,  15.3,  15.2,  11.6,  13. ,  14.5,  14.9,  14. ,  18.4,\n",
+       "        16.6,  11.3,  15.9,  14.7,  18.3,  16.3,  12. ,  16.4,  16.5,\n",
+       "        17.9,  10.8,  12.9,  13.5,  12.5,  15.5,  15.1,  19.1,  17.2,\n",
+       "        18.7,  18.8,  15.6,  16.1,  19.7,  13.7,  16.2,  15.8,  18. ,\n",
+       "        11.5,  14.4,  22.1,  17.4,  19.5,  14.8,  13.1,  19. ,  18.5,\n",
+       "        13.4,  17.7,  10.4,  13.3,  10.7,  15. ,  17.1,  11.8,  14.3,\n",
+       "         7.3,   9.9,  20.8,  20.3,   8.8,  20.7,  12.2,  21.6,  10.9,\n",
+       "        10.2,  10.3,  13.8,   8.5,   5.9,   7.5,   8.4,  17.6,  10.1,\n",
+       "         6.5,   8.7,   9.2,  24.1,  11.2,   7.1,  13.9,  17.8,  20.6,\n",
+       "        10. ,  10.6,   9. ,   9.5,  20.2,   6.7,   8.2,   9.4,  17.5,\n",
+       "         9.7,  16.9,  16. ,  19.8,   5.7,  20. ,  18.1,  19.3,  18.6,\n",
+       "        20.9,   7.4,  20.5,   8.6,  21.7,  18.2,   5.8,   5.1,   6.9,\n",
+       "         8.3,  17.3,  21.2,  19.6,   5.4,  19.2,  22.2,  21.8,  20.1,\n",
+       "         7.6,  21. ,  19.9,  22.7,  19.4,  22.6,  21.1,  23.2,  18.9,  20.4])"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "mask = dsPupilTeacher['SCHOOLWIDE PUPIL-TEACHER RATIO'].map(lambda x: x > 0)\n",
+    "dsPupilTeacher = dsPupilTeacher[mask]\n",
+    "dsPupilTeacher['SCHOOLWIDE PUPIL-TEACHER RATIO'].unique()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Drop the original column."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>BORO</th>\n",
+       "      <th>CSD</th>\n",
+       "      <th>SCHOOL NAME</th>\n",
+       "      <th>GRADE</th>\n",
+       "      <th>PROGRAM TYPE</th>\n",
+       "      <th>CORE SUBJECT (MS CORE and 9-12 ONLY)</th>\n",
+       "      <th>CORE COURSE (MS CORE and 9-12 ONLY)</th>\n",
+       "      <th>SERVICE CATEGORY(K-9* ONLY)</th>\n",
+       "      <th>NUMBER OF CLASSES</th>\n",
+       "      <th>TOTAL REGISTER</th>\n",
+       "      <th>AVERAGE CLASS SIZE</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS</th>\n",
+       "      <th>SIZE OF LARGEST CLASS</th>\n",
+       "      <th>DATA SOURCE</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>0K</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>ATS</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>0K</td>\n",
+       "      <td>CTT</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>ATS</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>01</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>ATS</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>01</td>\n",
+       "      <td>CTT</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>ATS</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>M</td>\n",
+       "      <td>1</td>\n",
+       "      <td>P.S. 015 ROBERTO CLEMENTE</td>\n",
+       "      <td>02</td>\n",
+       "      <td>GEN ED</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>-</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>ATS</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "            BORO  CSD                SCHOOL NAME GRADE  PROGRAM TYPE  \\\n",
+       "SCHOOL CODE                                                            \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     0K       GEN ED   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     0K          CTT   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     01       GEN ED   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     01          CTT   \n",
+       "M015           M    1  P.S. 015 ROBERTO CLEMENTE     02       GEN ED   \n",
+       "\n",
+       "            CORE SUBJECT (MS CORE and 9-12 ONLY)  \\\n",
+       "SCHOOL CODE                                        \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "M015                                           -   \n",
+       "\n",
+       "            CORE COURSE (MS CORE and 9-12 ONLY) SERVICE CATEGORY(K-9* ONLY)  \\\n",
+       "SCHOOL CODE                                                                   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "M015                                          -                           -   \n",
+       "\n",
+       "             NUMBER OF CLASSES  TOTAL REGISTER  AVERAGE CLASS SIZE  \\\n",
+       "SCHOOL CODE                                                          \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            11.0                11.0   \n",
+       "M015                       1.0            17.0                17.0   \n",
+       "M015                       1.0            16.0                16.0   \n",
+       "\n",
+       "             SIZE OF SMALLEST CLASS  SIZE OF LARGEST CLASS DATA SOURCE  \n",
+       "SCHOOL CODE                                                             \n",
+       "M015                           21.0                   21.0         ATS  \n",
+       "M015                           21.0                   21.0         ATS  \n",
+       "M015                           11.0                   11.0         ATS  \n",
+       "M015                           17.0                   17.0         ATS  \n",
+       "M015                           16.0                   16.0         ATS  "
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsClassSize = dsClassSize.drop('SCHOOLWIDE PUPIL-TEACHER RATIO', axis=1)\n",
+    "dsClassSize.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now drop non-numeric fields that can't be easily summarized or aggregated and likely have no bearing on the SAT scores."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>NUMBER OF CLASSES</th>\n",
+       "      <th>TOTAL REGISTER</th>\n",
+       "      <th>AVERAGE CLASS SIZE</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS</th>\n",
+       "      <th>SIZE OF LARGEST CLASS</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>21.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>11.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "      <td>17.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>M015</th>\n",
+       "      <td>1.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "      <td>16.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             NUMBER OF CLASSES  TOTAL REGISTER  AVERAGE CLASS SIZE  \\\n",
+       "SCHOOL CODE                                                          \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            21.0                21.0   \n",
+       "M015                       1.0            11.0                11.0   \n",
+       "M015                       1.0            17.0                17.0   \n",
+       "M015                       1.0            16.0                16.0   \n",
+       "\n",
+       "             SIZE OF SMALLEST CLASS  SIZE OF LARGEST CLASS  \n",
+       "SCHOOL CODE                                                 \n",
+       "M015                           21.0                   21.0  \n",
+       "M015                           21.0                   21.0  \n",
+       "M015                           11.0                   11.0  \n",
+       "M015                           17.0                   17.0  \n",
+       "M015                           16.0                   16.0  "
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsClassSize = dsClassSize.drop(['BORO','CSD','SCHOOL NAME','GRADE ','PROGRAM TYPE',\\\n",
+    "'CORE SUBJECT (MS CORE and 9-12 ONLY)','CORE COURSE (MS CORE and 9-12 ONLY)',\\\n",
+    "'SERVICE CATEGORY(K-9* ONLY)','DATA SOURCE'], axis=1)\n",
+    "dsClassSize.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now we're ready to create some summary variables for each school and munge the DataFrame so that it has one row per school."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "grouped = dsClassSize.groupby(level=0)\n",
+    "dsClassSize = grouped.aggregate(np.max).\\\n",
+    "    join(grouped.aggregate(np.min), lsuffix=\".max\").\\\n",
+    "    join(grouped.aggregate(np.mean), lsuffix=\".min\", rsuffix=\".mean\").\\\n",
+    "    join(dsPupilTeacher)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>NUMBER OF CLASSES.max</th>\n",
+       "      <th>TOTAL REGISTER.max</th>\n",
+       "      <th>AVERAGE CLASS SIZE.max</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS.max</th>\n",
+       "      <th>SIZE OF LARGEST CLASS.max</th>\n",
+       "      <th>NUMBER OF CLASSES.min</th>\n",
+       "      <th>TOTAL REGISTER.min</th>\n",
+       "      <th>AVERAGE CLASS SIZE.min</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS.min</th>\n",
+       "      <th>SIZE OF LARGEST CLASS.min</th>\n",
+       "      <th>NUMBER OF CLASSES.mean</th>\n",
+       "      <th>TOTAL REGISTER.mean</th>\n",
+       "      <th>AVERAGE CLASS SIZE.mean</th>\n",
+       "      <th>SIZE OF SMALLEST CLASS.mean</th>\n",
+       "      <th>SIZE OF LARGEST CLASS.mean</th>\n",
+       "      <th>SCHOOLWIDE PUPIL-TEACHER RATIO</th>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>SCHOOL CODE</th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "      <th></th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>K001</th>\n",
+       "      <td>7.0</td>\n",
+       "      <td>158.0</td>\n",
+       "      <td>27.3</td>\n",
+       "      <td>25.0</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>12.0</td>\n",
+       "      <td>12.0</td>\n",
+       "      <td>12.0</td>\n",
+       "      <td>12.0</td>\n",
+       "      <td>2.611111</td>\n",
+       "      <td>56.277778</td>\n",
+       "      <td>20.822222</td>\n",
+       "      <td>19.944444</td>\n",
+       "      <td>21.555556</td>\n",
+       "      <td>13.3</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>K002</th>\n",
+       "      <td>11.0</td>\n",
+       "      <td>293.0</td>\n",
+       "      <td>27.7</td>\n",
+       "      <td>26.0</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>10.0</td>\n",
+       "      <td>8.0</td>\n",
+       "      <td>2.0</td>\n",
+       "      <td>10.0</td>\n",
+       "      <td>3.333333</td>\n",
+       "      <td>68.750000</td>\n",
+       "      <td>19.316667</td>\n",
+       "      <td>16.166667</td>\n",
+       "      <td>21.083333</td>\n",
+       "      <td>10.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>K003</th>\n",
+       "      <td>4.0</td>\n",
+       "      <td>76.0</td>\n",
+       "      <td>28.0</td>\n",
+       "      <td>28.0</td>\n",
+       "      <td>28.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>12.0</td>\n",
+       "      <td>9.5</td>\n",
+       "      <td>8.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>1.933333</td>\n",
+       "      <td>39.800000</td>\n",
+       "      <td>20.646667</td>\n",
+       "      <td>20.333333</td>\n",
+       "      <td>20.866667</td>\n",
+       "      <td>14.7</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>K005</th>\n",
+       "      <td>4.0</td>\n",
+       "      <td>75.0</td>\n",
+       "      <td>27.0</td>\n",
+       "      <td>27.0</td>\n",
+       "      <td>27.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>21.0</td>\n",
+       "      <td>9.3</td>\n",
+       "      <td>8.0</td>\n",
+       "      <td>12.0</td>\n",
+       "      <td>2.875000</td>\n",
+       "      <td>54.750000</td>\n",
+       "      <td>19.612500</td>\n",
+       "      <td>17.625000</td>\n",
+       "      <td>21.125000</td>\n",
+       "      <td>14.6</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>K006</th>\n",
+       "      <td>4.0</td>\n",
+       "      <td>125.0</td>\n",
+       "      <td>31.3</td>\n",
+       "      <td>31.0</td>\n",
+       "      <td>32.0</td>\n",
+       "      <td>1.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>10.7</td>\n",
+       "      <td>8.0</td>\n",
+       "      <td>11.0</td>\n",
+       "      <td>2.545455</td>\n",
+       "      <td>60.000000</td>\n",
+       "      <td>21.927273</td>\n",
+       "      <td>20.727273</td>\n",
+       "      <td>23.181818</td>\n",
+       "      <td>14.6</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "             NUMBER OF CLASSES.max  TOTAL REGISTER.max  \\\n",
+       "SCHOOL CODE                                              \n",
+       "K001                           7.0               158.0   \n",
+       "K002                          11.0               293.0   \n",
+       "K003                           4.0                76.0   \n",
+       "K005                           4.0                75.0   \n",
+       "K006                           4.0               125.0   \n",
+       "\n",
+       "             AVERAGE CLASS SIZE.max  SIZE OF SMALLEST CLASS.max  \\\n",
+       "SCHOOL CODE                                                       \n",
+       "K001                           27.3                        25.0   \n",
+       "K002                           27.7                        26.0   \n",
+       "K003                           28.0                        28.0   \n",
+       "K005                           27.0                        27.0   \n",
+       "K006                           31.3                        31.0   \n",
+       "\n",
+       "             SIZE OF LARGEST CLASS.max  NUMBER OF CLASSES.min  \\\n",
+       "SCHOOL CODE                                                     \n",
+       "K001                              31.0                    1.0   \n",
+       "K002                              31.0                    1.0   \n",
+       "K003                              28.0                    1.0   \n",
+       "K005                              27.0                    1.0   \n",
+       "K006                              32.0                    1.0   \n",
+       "\n",
+       "             TOTAL REGISTER.min  AVERAGE CLASS SIZE.min  \\\n",
+       "SCHOOL CODE                                               \n",
+       "K001                       12.0                    12.0   \n",
+       "K002                       10.0                     8.0   \n",
+       "K003                       12.0                     9.5   \n",
+       "K005                       21.0                     9.3   \n",
+       "K006                       11.0                    10.7   \n",
+       "\n",
+       "             SIZE OF SMALLEST CLASS.min  SIZE OF LARGEST CLASS.min  \\\n",
+       "SCHOOL CODE                                                          \n",
+       "K001                               12.0                       12.0   \n",
+       "K002                                2.0                       10.0   \n",
+       "K003                                8.0                       11.0   \n",
+       "K005                                8.0                       12.0   \n",
+       "K006                                8.0                       11.0   \n",
+       "\n",
+       "             NUMBER OF CLASSES.mean  TOTAL REGISTER.mean  \\\n",
+       "SCHOOL CODE                                                \n",
+       "K001                       2.611111            56.277778   \n",
+       "K002                       3.333333            68.750000   \n",
+       "K003                       1.933333            39.800000   \n",
+       "K005                       2.875000            54.750000   \n",
+       "K006                       2.545455            60.000000   \n",
+       "\n",
+       "             AVERAGE CLASS SIZE.mean  SIZE OF SMALLEST CLASS.mean  \\\n",
+       "SCHOOL CODE                                                         \n",
+       "K001                       20.822222                    19.944444   \n",
+       "K002                       19.316667                    16.166667   \n",
+       "K003                       20.646667                    20.333333   \n",
+       "K005                       19.612500                    17.625000   \n",
+       "K006                       21.927273                    20.727273   \n",
+       "\n",
+       "             SIZE OF LARGEST CLASS.mean  SCHOOLWIDE PUPIL-TEACHER RATIO  \n",
+       "SCHOOL CODE                                                              \n",
+       "K001                          21.555556                            13.3  \n",
+       "K002                          21.083333                            10.7  \n",
+       "K003                          20.866667                            14.7  \n",
+       "K005                          21.125000                            14.6  \n",
+       "K006                          23.181818                            14.6  "
+      ]
+     },
+     "execution_count": 28,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dsClassSize.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Joining\n",
+    "\n",
+    "One final thing before we join - dsProgReports contains distinct rows for separate grade level blocks within one school. For instance one school (one DBN) might have two rows: one for middle school and one for high school. We'll just drop everything that isn't high school.\n",
+    "\n",
+    "And finally we can join our data. (Note these are inner joins, so district data get joined to each school in that district. An inner join keeps only those records that appear in both files being joined.)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "mask = dsProgReports['SCHOOL LEVEL*'].map(lambda x: x == 'High School')\n",
+    "dsProgReports = dsProgReports[mask]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "final = dsSATs.join(dsClassSize).\\\n",
+    "join(dsProgReports).\\\n",
+    "merge(dsDistrict, left_on='DISTRICT', right_index=True).\\\n",
+    "merge(dsAttendEnroll, left_on='DISTRICT', right_index=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Additional Cleanup\n",
+    "\n",
+    "We should be in a position to build a predictive model for our target variables right away but unfortunately there is still messy data floating around in the dataframe that machine learning algorithms will choke on. A pure feature matrix should have only numeric features, but we can see that isn't the case. However for many of these columns, the right approach is obvious once we've dug in."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "School Name                      object\n",
+       "SCHOOL                           object\n",
+       "PRINCIPAL                        object\n",
+       "PROGRESS REPORT TYPE             object\n",
+       "SCHOOL LEVEL*                    object\n",
+       "2009-2010 OVERALL GRADE          object\n",
+       "2009-2010 ENVIRONMENT GRADE      object\n",
+       "2009-2010 PERFORMANCE GRADE      object\n",
+       "2009-2010 PROGRESS GRADE         object\n",
+       "2008-09 PROGRESS REPORT GRADE    object\n",
+       "YTD % Attendance (Avg)           object\n",
+       "dtype: object"
+      ]
+     },
+     "execution_count": 31,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "final.dtypes[final.dtypes.map(lambda x: x=='object')]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We'll just drop string columns. If we were going to do serious machine learning here, we could build features from some of these. But we won't do it in BA575."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "final = final.drop(['School Name','SCHOOL','PRINCIPAL','SCHOOL LEVEL*','PROGRESS REPORT TYPE'],axis=1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Another little cleanup ..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "final['YTD % Attendance (Avg)'] = final['YTD % Attendance (Avg)'].map(lambda x: x.replace(\"%\",\"\")).astype(float)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We still have a few columns to deal with ..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "2009-2010 OVERALL GRADE          object\n",
+       "2009-2010 ENVIRONMENT GRADE      object\n",
+       "2009-2010 PERFORMANCE GRADE      object\n",
+       "2009-2010 PROGRESS GRADE         object\n",
+       "2008-09 PROGRESS REPORT GRADE    object\n",
+       "dtype: object"
+      ]
+     },
+     "execution_count": 34,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "final.dtypes[final.dtypes.map(lambda x: x=='object')]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Ordered Categorical Variables\n",
+    "\n",
+    "We can see above that the remaining non-numeric field are grades . Intuitively, they might be important so we don't want to drop them, but in order to get a pure feature matrix we need numeric values. The approach we'll use here is to explode these into multiple boolean columns. Some machine learning libraries effectively do this for you under the covers, but when the cardinality of the categorical variable is relatively low, it's nice to be explicit about it."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/liran/anaconda/lib/python2.7/site-packages/numpy/lib/arraysetops.py:200: FutureWarning: numpy not_equal will not check object identity in the future. The comparison did not return the same result as suggested by the identity (`is`)) and will change.\n",
+      "  flag = np.concatenate(([True], aux[1:] != aux[:-1]))\n"
+     ]
+    }
+   ],
+   "source": [
+    "gradeCols = ['2009-2010 OVERALL GRADE','2009-2010 ENVIRONMENT GRADE','2009-2010 PERFORMANCE GRADE','2009-2010 PROGRESS GRADE','2008-09 PROGRESS REPORT GRADE']\n",
+    "\n",
+    "grades = np.unique(final[gradeCols].values) #[nan, A, B, C, D, F]\n",
+    "\n",
+    "for c in gradeCols:\n",
+    "    for g in grades:\n",
+    "        final = final.join(pd.Series(data=final[c].map(lambda x: 1 if x is g else 0), name=c + \"_is_\" + str(g)))\n",
+    "\n",
+    "final = final.drop(gradeCols, axis=1)\n",
+    "\n",
+    "#Uncomment to generate csv files\n",
+    "#final.drop(['Critical Reading Mean','Mathematics Mean','Writing Mean'],axis=1).to_csv('NYC_Schools/train.csv')\n",
+    "#final.filter(['Critical Reading Mean','Mathematics Mean','Writing Mean']).to_csv('NYC_Schools/target.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "final = final.dropna()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Modeling\n",
+    "\n",
+    "We now have a feature matrix and it's trivial to use it with any number of machine learning algorithms."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/liran/anaconda/lib/python2.7/site-packages/ipykernel/__main__.py:8: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples,), for example using ravel().\n"
+     ]
+    },
+    {
+     "data": {
+      "text/plain": [
+       "[('PEER INDEX*', 0.83661732250158594),\n",
+       " ('2009-2010 ENVIRONMENT CATEGORY SCORE', 0.021210648810013159),\n",
+       " ('SCHOOLWIDE PUPIL-TEACHER RATIO', 0.010990313740115594),\n",
+       " ('2009-2010 PERFORMANCE CATEGORY SCORE', 0.0098497460367575063),\n",
+       " ('TOTAL REGISTER.min', 0.0089082903836561617),\n",
+       " ('Number of Test Takers', 0.0085538015606558809),\n",
+       " ('SIZE OF SMALLEST CLASS.mean', 0.0069139710535732193),\n",
+       " ('AVERAGE CLASS SIZE.min', 0.0062762288194917523),\n",
+       " ('DISTRICT', 0.005796889197010483),\n",
+       " ('2009-2010 PROGRESS CATEGORY SCORE', 0.0053676559948345852)]"
+      ]
+     },
+     "execution_count": 37,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.ensemble import RandomForestRegressor\n",
+    "import math\n",
+    "\n",
+    "target = final.filter(['Critical Reading Mean'])\n",
+    "#We drop all three dependent variables because we don't want them used when trying to make a prediction.\n",
+    "train = final.drop(['Critical Reading Mean','Writing Mean','Mathematics Mean'],axis=1)\n",
+    "model = RandomForestRegressor(n_estimators=100, n_jobs=-1)\n",
+    "model.fit(train, target)\n",
+    "\n",
+    "predictions = np.array(model.predict(train))\n",
+    "imp = sorted(zip(train.columns, model.feature_importances_), key=lambda tup: tup[1], reverse=True)\n",
+    "\n",
+    "imp[:10]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}

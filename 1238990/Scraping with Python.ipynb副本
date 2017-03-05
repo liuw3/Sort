@@ -1,0 +1,3952 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Scraping with Python"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Why scrape the web?\n",
+    "- Vast source of information\n",
+    "- Automate tasks\n",
+    "- Keep up with sites\n",
+    "- Fun!\n",
+    "\n",
+    "*** Can you think of examples ? ***"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Read and Tweet!\n",
+    "\n",
+    "![ReadTweet](https://static01.nyt.com/packages/images/developer/readtweet2.jpg\n",
+    " \"We read we tweet\")\n",
+    "\n",
+    "* by Justin Blinder\n",
+    "* http://projects.justinblinder.com/We-Read-We-Tweet"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Twitter Sentiments\n",
+    "\n",
+    "![TwitterSentiments](http://www.csc.ncsu.edu/faculty/healey/tweet_viz/figs/tweet-viz-ex.png\n",
+    " \"Twitter Sentiments\")\n",
+    "\n",
+    "* by Healey and Ramaswamy\n",
+    "* http://www.csc.ncsu.edu/faculty/healey/tweet_viz/tweet_app/"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Python data scraping\n",
+    "\n",
+    "Copyrights and permission:\n",
+    "* Be careful and polite\n",
+    "* Give credit\n",
+    "* Care about media law\n",
+    "* Don't be evil (no spam, overloading sites, etc.)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Robots.txt\n",
+    "\n",
+    "![Robots.txt](http://blogtimenow.com/wp-content/uploads/2013/11/custom-robots.txt-file-blogger.jpg \"Robots.txt\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "* Specified by web site owner\n",
+    "* Gives instructions to web robots (aka your script)\n",
+    "* Is located at the top-level directory of the web server\n",
+    "\n",
+    "Example:\n",
+    "\n",
+    "http://google.com/robots.txt"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "Things to consider:\n",
+    "\n",
+    "* Can be just ignored\n",
+    "* Can be a security risk \n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Scraping with Python:\n",
+    "\n",
+    "Scraping is all about HTML tags\n",
+    "\n",
+    "There are two basic tasks when we scrape web sites:\n",
+    "1. load a web page to a string\n",
+    "2. parse HTML from a web page to locate the interesting bits\n",
+    "\n",
+    "### Bad news: \n",
+    "* Need to learn about tags\n",
+    "* Websites can be ugly"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "### HTML\n",
+    "\n",
+    "* HyperText Markup Language\n",
+    "* Standard for creating webpages\n",
+    "* HTML tags \n",
+    "    - have angle brackets\n",
+    "    - typically come in pairs"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Here is an example for a minimal webpage defined in HTML tags. The root tag is `<html>` and then you have the `<head>` tag. This part of the page typically includes the title of the page and might also have other meta information like the author or keywords that are important for search engines. The `<body>` tag marks the actual content of the page. You can play around with the `<h2>` tag trying different header levels. They range from 1 to 6. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": false,
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<!DOCTYPE html>\n",
+       "<html>\n",
+       "  <head>\n",
+       "    <title>This is a title</title>\n",
+       "  </head>\n",
+       "  <body>\n",
+       "    <h2> Test </h2>\n",
+       "    <p>Hello world!</p>\n",
+       "  </body>\n",
+       "</html>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "execution_count": 1,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from IPython.display import HTML\n",
+    "\n",
+    "s = \"\"\"<!DOCTYPE html>\n",
+    "<html>\n",
+    "  <head>\n",
+    "    <title>This is a title</title>\n",
+    "  </head>\n",
+    "  <body>\n",
+    "    <h2> Test </h2>\n",
+    "    <p>Hello world!</p>\n",
+    "  </body>\n",
+    "</html>\"\"\"\n",
+    "\n",
+    "h = HTML(s)\n",
+    "h"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "### Useful Tags\n",
+    "\n",
+    "* heading\n",
+    "`<h1></h1> ... <h6></h6>`\n",
+    "\n",
+    "* paragraph\n",
+    "`<p></p>` \n",
+    "\n",
+    "* line break\n",
+    "`<br>` \n",
+    "\n",
+    "* link with attribute\n",
+    "\n",
+    "`<a href=\"http://www.example.com/\">An example link</a>`\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "### Example of a beautifully simple webpage:\n",
+    "\n",
+    "http://www.crummy.com/software/BeautifulSoup"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "### Good news: \n",
+    "\n",
+    "* Some browsers help\n",
+    "* Look for: inspect element\n",
+    "* Need only basic HTML\n",
+    "    \n",
+    "*** Try 'Ctrl-Shift I' in Chrome ***\n",
+    "\n",
+    "*** Try 'Command-Option I' in Safari ***\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Useful libraries for scraping with Python\n",
+    "\n",
+    "* urllib2\n",
+    "* requests\n",
+    "* beautifulsoup\n",
+    "* lxml\n",
+    "* ...\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The following cell reads the data from a url using the `urllib2` library. You see that we got the whole HTML content of the page into the string variable `source`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": true,
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "import urllib2\n",
+    "\n",
+    "url = 'http://www.crummy.com/software/BeautifulSoup'\n",
+    "source = urllib2.urlopen(url).read()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "str"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(source)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\"\n",
+      "\"http://www.w3.org/TR/REC-html40/transitional.dtd\">\n",
+      "<html>\n",
+      "<head>\n",
+      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n",
+      "<title>Beautiful Soup: We called him Tortoise because he taught us.</title>\n",
+      "<link rev=\"made\" href=\"mailto:leonardr@segfault.org\">\n",
+      "<link rel=\"stylesheet\" type=\"text/css\" href=\"/nb/themes/Default/nb.css\">\n",
+      "<meta name=\"Description\" content=\"Beautiful Soup: a library designed for screen-scraping HTML and XML.\">\n",
+      "<meta name=\"generator\" content=\"Markov Approximation 1.4 (module: leonardr)\">\n",
+      "<meta name=\"author\" content=\"Leonard Richardson\">\n",
+      "</head>\n",
+      "<body bgcolor=\"white\" text=\"black\" link=\"blue\" vlink=\"660066\" alink=\"red\">\n",
+      "<img align=\"right\" src=\"10.1.jpg\" width=\"250\"><br />\n",
+      "\n",
+      "<p>You didn't write that awful page. You're just trying to get some\n",
+      "data out of it. Beautiful Soup is here to help. Since 2004, it's been\n",
+      "saving programmers hours or days of work on quick-turnaround\n",
+      "screen scraping projects.</p>\n",
+      "\n",
+      "<div align=\"center\">\n",
+      "\n",
+      "<a href=\"bs4/download/\"><h1>Beautiful Soup</h1></a>\n",
+      "\n",
+      "<p>\"A tremendous boon.\" -- Python411 Podcast</p>\n",
+      "\n",
+      "<p>[ <a href=\"#Download\">Download</a> | <a\n",
+      "href=\"bs4/doc/\">Documentation</a> | <a href=\"#HallOfFame\">Hall of Fame</a> | <a href=\"https://code.launchpad.net/beautifulsoup\">Source</a> | <a href=\"https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup\">Discussion group</a> ]</p>\n",
+      "\n",
+      "<small>If Beautiful Soup has saved you a lot of time and money, the\n",
+      "best way to pay me back is to check out <a\n",
+      "href=\"http://www.candlemarkandgleam.com/shop/constellation-games/\"><i>Constellation\n",
+      "Games</i>, my sci-fi novel about alien video games</a>.<br />You can\n",
+      "<a\n",
+      "href=\"http://constellation.crummy.com/Constellation%20Games%20excerpt.html\">read\n",
+      "the first two chapters for free</a>, and the full novel starts at 5\n",
+      "USD. Thanks!</small> </div>\n",
+      "\n",
+      "<p><i>If you have questions, send them to <a\n",
+      "href=\"https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup\">the discussion\n",
+      "group</a>. If you find a bug, <a href=\"https://bugs.launchpad.net/beautifulsoup/\">file it</a>.</i></p>\n",
+      "\n",
+      "<p>Beautiful Soup is a Python library designed for quick turnaround\n",
+      "projects like screen-scraping. Three features make it powerful:\n",
+      "\n",
+      "<ol>\n",
+      "\n",
+      "<li>Beautiful Soup provides a few simple methods and Pythonic idioms\n",
+      "for navigating, searching, and modifying a parse tree: a toolkit for\n",
+      "dissecting a document and extracting what you need. It doesn't take\n",
+      "much code to write an application\n",
+      "\n",
+      "<li>Beautiful Soup automatically converts incoming documents to\n",
+      "Unicode and outgoing documents to UTF-8. You don't have to think\n",
+      "about encodings, unless the document doesn't specify an encoding and\n",
+      "Beautiful Soup can't detect one. Then you just have to specify the\n",
+      "original encoding.\n",
+      "\n",
+      "<li>Beautiful Soup sits on top of popular Python parsers like <a\n",
+      "href=\"http://lxml.de/\">lxml</a> and <a\n",
+      "href=\"http://code.google.com/p/html5lib/\">html5lib</a>, allowing you\n",
+      "to try out different parsing strategies or trade speed for\n",
+      "flexibility.\n",
+      "\n",
+      "</ol>\n",
+      "\n",
+      "<p>Beautiful Soup parses anything you give it, and does the tree\n",
+      "traversal stuff for you. You can tell it \"Find all the links\", or\n",
+      "\"Find all the links of class <tt>externalLink</tt>\", or \"Find all the\n",
+      "links whose urls match \"foo.com\", or \"Find the table heading that's\n",
+      "got bold text, then give me that text.\"\n",
+      "\n",
+      "<p>Valuable data that was once locked up in poorly-designed websites\n",
+      "is now within your reach. Projects that would have taken hours take\n",
+      "only minutes with Beautiful Soup.\n",
+      "\n",
+      "<p>Interested? <a href=\"bs4/doc/\">Read more.</a>\n",
+      "\n",
+      "<a name=\"Download\"><h2>Download Beautiful Soup</h2></a>\n",
+      "\n",
+      "<p>The current release is <a href=\"bs4/download/\">Beautiful Soup\n",
+      "4.5.3</a> (January 2, 2017). You can install Beautiful Soup 4 with\n",
+      "<code>pip install beautifulsoup4</code>.\n",
+      "\n",
+      "<p>In Debian and Ubuntu, Beautiful Soup is available as the\n",
+      "<code>python-bs4</code> package (for Python 2) or the\n",
+      "<code>python3-bs4</code> package (for Python 3). In Fedora it's\n",
+      "available as the <code>python-beautifulsoup4</code> package.\n",
+      "\n",
+      "<p>Beautiful Soup is licensed under the MIT license, so you can also\n",
+      "download the tarball, drop the <code>bs4/</code> directory into almost\n",
+      "any Python application (or into your library path) and start using it\n",
+      "immediately. (If you want to do this under Python 3, you will need to\n",
+      "manually convert the code using <code>2to3</code>.)\n",
+      "\n",
+      "<p>Beautiful Soup 4 works on both Python 2 (2.7+) and Python 3.\n",
+      "\n",
+      "<h3>Beautiful Soup 3</h3>\n",
+      "\n",
+      "<p>Beautiful Soup 3 was the official release line of Beautiful Soup\n",
+      "from May 2006 to March 2012. It is considered stable, and only\n",
+      "critical security bugs will be fixed. <a\n",
+      "href=\"http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html\">Here's\n",
+      "the Beautiful Soup 3 documentation.</a>\n",
+      "\n",
+      "<p>Beautiful Soup 3 works only under Python 2.x. It is licensed under\n",
+      "the same license as Python itself.\n",
+      "\n",
+      "<p>The current release of Beautiful Soup 3 is <a\n",
+      "href=\"download/3.x/BeautifulSoup-3.2.1.tar.gz\">3.2.1</a> (February 16,\n",
+      "2012). You can install Beautiful Soup 3 with <code>pip install\n",
+      "BeautifulSoup</code>. It's also available as\n",
+      "<code>python-beautifulsoup</code> in Debian and Ubuntu, and as\n",
+      "<code>python-BeautifulSoup</code> in Fedora.\n",
+      "\n",
+      "<p>You can also download the tarball and use\n",
+      "<code>BeautifulSoup.py</code> in your project directly.\n",
+      "\n",
+      "\n",
+      "<a name=\"HallOfFame\"><h2>Hall of Fame</h2></a>\n",
+      "\n",
+      "<p>Over the years, Beautiful Soup has been used in hundreds of\n",
+      "different projects. There's no way I can list them all, but I want to\n",
+      "highlight a few high-profile projects. Beautiful Soup isn't what makes\n",
+      "these projects interesting, but it did make their completion easier:\n",
+      "\n",
+      "<ul>\n",
+      "\n",
+      "<li><a\n",
+      " href=\"http://www.nytimes.com/2007/10/25/arts/design/25vide.html\">\"Movable\n",
+      " Type\"</a>, a work of digital art on display in the lobby of the New\n",
+      " York Times building, uses Beautiful Soup to scrape news feeds.\n",
+      "\n",
+      "<li>Reddit uses Beautiful Soup to <a\n",
+      "href=\"https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py\">parse\n",
+      "a page that's been linked to and find a representative image</a>.\n",
+      "\n",
+      "<li>Alexander Harrowell uses Beautiful Soup to <a\n",
+      " href=\"http://www.harrowell.org.uk/viktormap.html\">track the business\n",
+      " activities</a> of an arms merchant.\n",
+      "\n",
+      "<li>The developers of Python itself used Beautiful Soup to <a\n",
+      "href=\"http://svn.python.org/view/tracker/importer/\">migrate the Python\n",
+      "bug tracker from Sourceforge to Roundup</a>.\n",
+      "\n",
+      "<li>The <a href=\"http://www2.ljworld.com/\">Lawrence Journal-World</a>\n",
+      "uses Beautiful Soup to <A\n",
+      "href=\"http://www.b-list.org/weblog/2010/nov/02/news-done-broke/\">gather\n",
+      "statewide election results</a>.\n",
+      "\n",
+      "<li>The <a href=\"http://esrl.noaa.gov/gsd/fab/\">NOAA's Forecast\n",
+      "Applications Branch</a> uses Beautiful Soup in <a\n",
+      "href=\"http://laps.noaa.gov/topograbber/\">TopoGrabber</a>, a script for\n",
+      "downloading \"high resolution USGS datasets.\"\n",
+      "\n",
+      "</ul>\n",
+      "\n",
+      "<p>If you've used Beautiful Soup in a project you'd like me to know\n",
+      "about, please do send email to me or <a\n",
+      "href=\"http://groups.google.com/group/beautifulsoup/\">the discussion\n",
+      "group</a>.\n",
+      "\n",
+      "<h2>Development</h2>\n",
+      "\n",
+      "<p>Development happens at <a\n",
+      "href=\"https://launchpad.net/beautifulsoup\">Launchpad</a>. You can <a\n",
+      "href=\"https://code.launchpad.net/beautifulsoup/\">get the source\n",
+      "code</a> or <a href=\"https://bugs.launchpad.net/beautifulsoup/\">file\n",
+      "bugs</a>.<hr><table><tr><td valign=\"top\">\n",
+      "<p>This document (<a href=\"/source/software/BeautifulSoup/index.bhtml\">source</a>) is part of Crummy, the webspace of <a href=\"/self/\">Leonard Richardson</a> (<a href=\"/self/contact.html\">contact information</a>). It was last modified on Monday, January 02 2017, 16:03:29 Nowhere Standard Time and last built on Sunday, February 19 2017, 00:00:01 Nowhere Standard Time.</p><p><table class=\"licenseText\"><tr><td><a href=\"http://creativecommons.org/licenses/by-sa/2.0/\"><img border=\"0\" src=\"/nb//resources/img/somerights20.jpg\"></a></td><td valign=\"top\">Crummy is &copy; 1996-2017 Leonard Richardson. Unless otherwise noted, all text licensed under a <a href=\"http://creativecommons.org/licenses/by-sa/2.0/\">Creative Commons License</a>.</td></tr></table></span><!--<rdf:RDF xmlns=\"http://web.resource.org/cc/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><Work rdf:about=\"http://www.crummy.com/\"><dc:title>Crummy: The Site</dc:title><dc:rights><Agent><dc:title>Crummy: the Site</dc:title></Agent></dc:rights><dc:format>text/html</dc:format><license rdf:resource=http://creativecommons.org/licenses/by-sa/2.0//></Work><License rdf:about=\"http://creativecommons.org/licenses/by-sa/2.0/\"></License></rdf:RDF>--></p></td><td valign=top><p><b>Document tree:</b>\n",
+      "<dl><dd><a href=\"http://www.crummy.com/\">http://www.crummy.com/</a><dl><dd><a href=\"http://www.crummy.com/software/\">software/</a><dl><dd><a href=\"http://www.crummy.com/software/BeautifulSoup/\">BeautifulSoup/</a></dl>\n",
+      "</dl>\n",
+      "</dl>\n",
+      "\n",
+      "\n",
+      "Site Search:\n",
+      "\n",
+      "<form method=\"get\" action=\"/search/\">\n",
+      "        <input type=\"text\" name=\"q\" maxlength=\"255\" value=\"\"></input>\n",
+      "        </form>\n",
+      "        </td>\n",
+      "\n",
+      "</tr>\n",
+      "\n",
+      "</table>\n",
+      "</body>\n",
+      "</html>\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "print source"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "### Quiz :\n",
+    "* Is the word 'Alice' mentioned on the beautiful soup homepage?\n",
+    "* How often does the word 'Soup' occur on the site?\n",
+    "    - hint: use `.count()`\n",
+    "* At what index occurs the substring 'alien video games' ?\n",
+    "    - hint: use `.find()`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": false,
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "False\n",
+      "42\n",
+      "1639\n",
+      "alien video games</a\n",
+      "alien video games\n"
+     ]
+    }
+   ],
+   "source": [
+    "## is 'Alice' in source?\n",
+    "print 'Alice' in source\n",
+    "\n",
+    "## count occurences of 'Soup'\n",
+    "print source.count('Soup')\n",
+    "\n",
+    "## find index of 'alien video games'\n",
+    "position =  source.find('alien video games')\n",
+    "print position\n",
+    "\n",
+    "## quick test to see the substring in the source variable\n",
+    "## you can access strings like lists\n",
+    "print source[position:position + 20]\n",
+    "\n",
+    "## or the tidier version:\n",
+    "print source[position:position + len('alien video games')]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Beautiful Soup\n",
+    "\n",
+    "* Designed to make your life easier\n",
+    "* Many good functions for parsing HTML code\n",
+    "\n",
+    "\n",
+    "Recall the two basic tasks when we scrape web sites:\n",
+    "1. load a web page to a string - just did that with `urllib2.urlopen(url).read()`\n",
+    "2. parse HTML from a web page to locate the interesting bits\n",
+    "\n",
+    "Let's create a Beautiful Soup object from the string variable `source`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import bs4 #this is Beautiful Soup\n",
+    "\n",
+    "soup = bs4.BeautifulSoup(source, \"lxml\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Compare these two print statements. Note that the `prettify()` function formats the output to show the different levels of the HTML code. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\" \"http://www.w3.org/TR/REC-html40/transitional.dtd\">\n",
+      "<html>\n",
+      " <head>\n",
+      "  <meta content=\"text/html; charset=utf-8\" http-equiv=\"Content-Type\"/>\n",
+      "  <title>\n",
+      "   Beautiful Soup: We called him Tortoise because he taught us.\n",
+      "  </title>\n",
+      "  <link href=\"mailto:leonardr@segfault.org\" rev=\"made\"/>\n",
+      "  <link href=\"/nb/themes/Default/nb.css\" rel=\"stylesheet\" type=\"text/css\"/>\n",
+      "  <meta content=\"Beautiful Soup: a library designed for screen-scraping HTML and XML.\" name=\"Description\"/>\n",
+      "  <meta content=\"Markov Approximation 1.4 (module: leonardr)\" name=\"generator\"/>\n",
+      "  <meta content=\"Leonard Richardson\" name=\"author\"/>\n",
+      " </head>\n",
+      " <body alink=\"red\" bgcolor=\"white\" link=\"blue\" text=\"black\" vlink=\"660066\">\n",
+      "  <img align=\"right\" src=\"10.1.jpg\" width=\"250\"/>\n",
+      "  <br/>\n",
+      "  <p>\n",
+      "   You didn't write that awful page. You're just trying to get some\n",
+      "data out of it. Beautiful Soup is here to help. Since 2004, it's been\n",
+      "saving programmers hours or days of work on quick-turnaround\n",
+      "screen scraping projects.\n",
+      "  </p>\n",
+      "  <div align=\"center\">\n",
+      "   <a href=\"bs4/download/\">\n",
+      "    <h1>\n",
+      "     Beautiful Soup\n",
+      "    </h1>\n",
+      "   </a>\n",
+      "   <p>\n",
+      "    \"A tremendous boon.\" -- Python411 Podcast\n",
+      "   </p>\n",
+      "   <p>\n",
+      "    [\n",
+      "    <a href=\"#Download\">\n",
+      "     Download\n",
+      "    </a>\n",
+      "    |\n",
+      "    <a href=\"bs4/doc/\">\n",
+      "     Documentation\n",
+      "    </a>\n",
+      "    |\n",
+      "    <a href=\"#HallOfFame\">\n",
+      "     Hall of Fame\n",
+      "    </a>\n",
+      "    |\n",
+      "    <a href=\"https://code.launchpad.net/beautifulsoup\">\n",
+      "     Source\n",
+      "    </a>\n",
+      "    |\n",
+      "    <a href=\"https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup\">\n",
+      "     Discussion group\n",
+      "    </a>\n",
+      "    ]\n",
+      "   </p>\n",
+      "   <small>\n",
+      "    If Beautiful Soup has saved you a lot of time and money, the\n",
+      "best way to pay me back is to check out\n",
+      "    <a href=\"http://www.candlemarkandgleam.com/shop/constellation-games/\">\n",
+      "     <i>\n",
+      "      Constellation\n",
+      "Games\n",
+      "     </i>\n",
+      "     , my sci-fi novel about alien video games\n",
+      "    </a>\n",
+      "    .\n",
+      "    <br/>\n",
+      "    You can\n",
+      "    <a href=\"http://constellation.crummy.com/Constellation%20Games%20excerpt.html\">\n",
+      "     read\n",
+      "the first two chapters for free\n",
+      "    </a>\n",
+      "    , and the full novel starts at 5\n",
+      "USD. Thanks!\n",
+      "   </small>\n",
+      "  </div>\n",
+      "  <p>\n",
+      "   <i>\n",
+      "    If you have questions, send them to\n",
+      "    <a href=\"https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup\">\n",
+      "     the discussion\n",
+      "group\n",
+      "    </a>\n",
+      "    . If you find a bug,\n",
+      "    <a href=\"https://bugs.launchpad.net/beautifulsoup/\">\n",
+      "     file it\n",
+      "    </a>\n",
+      "    .\n",
+      "   </i>\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Beautiful Soup is a Python library designed for quick turnaround\n",
+      "projects like screen-scraping. Three features make it powerful:\n",
+      "  </p>\n",
+      "  <ol>\n",
+      "   <li>\n",
+      "    Beautiful Soup provides a few simple methods and Pythonic idioms\n",
+      "for navigating, searching, and modifying a parse tree: a toolkit for\n",
+      "dissecting a document and extracting what you need. It doesn't take\n",
+      "much code to write an application\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    Beautiful Soup automatically converts incoming documents to\n",
+      "Unicode and outgoing documents to UTF-8. You don't have to think\n",
+      "about encodings, unless the document doesn't specify an encoding and\n",
+      "Beautiful Soup can't detect one. Then you just have to specify the\n",
+      "original encoding.\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    Beautiful Soup sits on top of popular Python parsers like\n",
+      "    <a href=\"http://lxml.de/\">\n",
+      "     lxml\n",
+      "    </a>\n",
+      "    and\n",
+      "    <a href=\"http://code.google.com/p/html5lib/\">\n",
+      "     html5lib\n",
+      "    </a>\n",
+      "    , allowing you\n",
+      "to try out different parsing strategies or trade speed for\n",
+      "flexibility.\n",
+      "   </li>\n",
+      "  </ol>\n",
+      "  <p>\n",
+      "   Beautiful Soup parses anything you give it, and does the tree\n",
+      "traversal stuff for you. You can tell it \"Find all the links\", or\n",
+      "\"Find all the links of class\n",
+      "   <tt>\n",
+      "    externalLink\n",
+      "   </tt>\n",
+      "   \", or \"Find all the\n",
+      "links whose urls match \"foo.com\", or \"Find the table heading that's\n",
+      "got bold text, then give me that text.\"\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Valuable data that was once locked up in poorly-designed websites\n",
+      "is now within your reach. Projects that would have taken hours take\n",
+      "only minutes with Beautiful Soup.\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Interested?\n",
+      "   <a href=\"bs4/doc/\">\n",
+      "    Read more.\n",
+      "   </a>\n",
+      "   <a name=\"Download\">\n",
+      "    <h2>\n",
+      "     Download Beautiful Soup\n",
+      "    </h2>\n",
+      "   </a>\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   The current release is\n",
+      "   <a href=\"bs4/download/\">\n",
+      "    Beautiful Soup\n",
+      "4.5.3\n",
+      "   </a>\n",
+      "   (January 2, 2017). You can install Beautiful Soup 4 with\n",
+      "   <code>\n",
+      "    pip install beautifulsoup4\n",
+      "   </code>\n",
+      "   .\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   In Debian and Ubuntu, Beautiful Soup is available as the\n",
+      "   <code>\n",
+      "    python-bs4\n",
+      "   </code>\n",
+      "   package (for Python 2) or the\n",
+      "   <code>\n",
+      "    python3-bs4\n",
+      "   </code>\n",
+      "   package (for Python 3). In Fedora it's\n",
+      "available as the\n",
+      "   <code>\n",
+      "    python-beautifulsoup4\n",
+      "   </code>\n",
+      "   package.\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Beautiful Soup is licensed under the MIT license, so you can also\n",
+      "download the tarball, drop the\n",
+      "   <code>\n",
+      "    bs4/\n",
+      "   </code>\n",
+      "   directory into almost\n",
+      "any Python application (or into your library path) and start using it\n",
+      "immediately. (If you want to do this under Python 3, you will need to\n",
+      "manually convert the code using\n",
+      "   <code>\n",
+      "    2to3\n",
+      "   </code>\n",
+      "   .)\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Beautiful Soup 4 works on both Python 2 (2.7+) and Python 3.\n",
+      "  </p>\n",
+      "  <h3>\n",
+      "   Beautiful Soup 3\n",
+      "  </h3>\n",
+      "  <p>\n",
+      "   Beautiful Soup 3 was the official release line of Beautiful Soup\n",
+      "from May 2006 to March 2012. It is considered stable, and only\n",
+      "critical security bugs will be fixed.\n",
+      "   <a href=\"http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html\">\n",
+      "    Here's\n",
+      "the Beautiful Soup 3 documentation.\n",
+      "   </a>\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Beautiful Soup 3 works only under Python 2.x. It is licensed under\n",
+      "the same license as Python itself.\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   The current release of Beautiful Soup 3 is\n",
+      "   <a href=\"download/3.x/BeautifulSoup-3.2.1.tar.gz\">\n",
+      "    3.2.1\n",
+      "   </a>\n",
+      "   (February 16,\n",
+      "2012). You can install Beautiful Soup 3 with\n",
+      "   <code>\n",
+      "    pip install\n",
+      "BeautifulSoup\n",
+      "   </code>\n",
+      "   . It's also available as\n",
+      "   <code>\n",
+      "    python-beautifulsoup\n",
+      "   </code>\n",
+      "   in Debian and Ubuntu, and as\n",
+      "   <code>\n",
+      "    python-BeautifulSoup\n",
+      "   </code>\n",
+      "   in Fedora.\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   You can also download the tarball and use\n",
+      "   <code>\n",
+      "    BeautifulSoup.py\n",
+      "   </code>\n",
+      "   in your project directly.\n",
+      "   <a name=\"HallOfFame\">\n",
+      "    <h2>\n",
+      "     Hall of Fame\n",
+      "    </h2>\n",
+      "   </a>\n",
+      "  </p>\n",
+      "  <p>\n",
+      "   Over the years, Beautiful Soup has been used in hundreds of\n",
+      "different projects. There's no way I can list them all, but I want to\n",
+      "highlight a few high-profile projects. Beautiful Soup isn't what makes\n",
+      "these projects interesting, but it did make their completion easier:\n",
+      "  </p>\n",
+      "  <ul>\n",
+      "   <li>\n",
+      "    <a href=\"http://www.nytimes.com/2007/10/25/arts/design/25vide.html\">\n",
+      "     \"Movable\n",
+      " Type\"\n",
+      "    </a>\n",
+      "    , a work of digital art on display in the lobby of the New\n",
+      " York Times building, uses Beautiful Soup to scrape news feeds.\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    Reddit uses Beautiful Soup to\n",
+      "    <a href=\"https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py\">\n",
+      "     parse\n",
+      "a page that's been linked to and find a representative image\n",
+      "    </a>\n",
+      "    .\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    Alexander Harrowell uses Beautiful Soup to\n",
+      "    <a href=\"http://www.harrowell.org.uk/viktormap.html\">\n",
+      "     track the business\n",
+      " activities\n",
+      "    </a>\n",
+      "    of an arms merchant.\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    The developers of Python itself used Beautiful Soup to\n",
+      "    <a href=\"http://svn.python.org/view/tracker/importer/\">\n",
+      "     migrate the Python\n",
+      "bug tracker from Sourceforge to Roundup\n",
+      "    </a>\n",
+      "    .\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    The\n",
+      "    <a href=\"http://www2.ljworld.com/\">\n",
+      "     Lawrence Journal-World\n",
+      "    </a>\n",
+      "    uses Beautiful Soup to\n",
+      "    <a href=\"http://www.b-list.org/weblog/2010/nov/02/news-done-broke/\">\n",
+      "     gather\n",
+      "statewide election results\n",
+      "    </a>\n",
+      "    .\n",
+      "   </li>\n",
+      "   <li>\n",
+      "    The\n",
+      "    <a href=\"http://esrl.noaa.gov/gsd/fab/\">\n",
+      "     NOAA's Forecast\n",
+      "Applications Branch\n",
+      "    </a>\n",
+      "    uses Beautiful Soup in\n",
+      "    <a href=\"http://laps.noaa.gov/topograbber/\">\n",
+      "     TopoGrabber\n",
+      "    </a>\n",
+      "    , a script for\n",
+      "downloading \"high resolution USGS datasets.\"\n",
+      "   </li>\n",
+      "  </ul>\n",
+      "  <p>\n",
+      "   If you've used Beautiful Soup in a project you'd like me to know\n",
+      "about, please do send email to me or\n",
+      "   <a href=\"http://groups.google.com/group/beautifulsoup/\">\n",
+      "    the discussion\n",
+      "group\n",
+      "   </a>\n",
+      "   .\n",
+      "  </p>\n",
+      "  <h2>\n",
+      "   Development\n",
+      "  </h2>\n",
+      "  <p>\n",
+      "   Development happens at\n",
+      "   <a href=\"https://launchpad.net/beautifulsoup\">\n",
+      "    Launchpad\n",
+      "   </a>\n",
+      "   . You can\n",
+      "   <a href=\"https://code.launchpad.net/beautifulsoup/\">\n",
+      "    get the source\n",
+      "code\n",
+      "   </a>\n",
+      "   or\n",
+      "   <a href=\"https://bugs.launchpad.net/beautifulsoup/\">\n",
+      "    file\n",
+      "bugs\n",
+      "   </a>\n",
+      "   .\n",
+      "  </p>\n",
+      "  <hr/>\n",
+      "  <table>\n",
+      "   <tr>\n",
+      "    <td valign=\"top\">\n",
+      "     <p>\n",
+      "      This document (\n",
+      "      <a href=\"/source/software/BeautifulSoup/index.bhtml\">\n",
+      "       source\n",
+      "      </a>\n",
+      "      ) is part of Crummy, the webspace of\n",
+      "      <a href=\"/self/\">\n",
+      "       Leonard Richardson\n",
+      "      </a>\n",
+      "      (\n",
+      "      <a href=\"/self/contact.html\">\n",
+      "       contact information\n",
+      "      </a>\n",
+      "      ). It was last modified on Monday, January 02 2017, 16:03:29 Nowhere Standard Time and last built on Sunday, February 19 2017, 00:00:01 Nowhere Standard Time.\n",
+      "     </p>\n",
+      "     <p>\n",
+      "     </p>\n",
+      "     <table class=\"licenseText\">\n",
+      "      <tr>\n",
+      "       <td>\n",
+      "        <a href=\"http://creativecommons.org/licenses/by-sa/2.0/\">\n",
+      "         <img border=\"0\" src=\"/nb//resources/img/somerights20.jpg\"/>\n",
+      "        </a>\n",
+      "       </td>\n",
+      "       <td valign=\"top\">\n",
+      "        Crummy is © 1996-2017 Leonard Richardson. Unless otherwise noted, all text licensed under a\n",
+      "        <a href=\"http://creativecommons.org/licenses/by-sa/2.0/\">\n",
+      "         Creative Commons License\n",
+      "        </a>\n",
+      "        .\n",
+      "       </td>\n",
+      "      </tr>\n",
+      "     </table>\n",
+      "     <!--<rdf:RDF xmlns=\"http://web.resource.org/cc/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"><Work rdf:about=\"http://www.crummy.com/\"><dc:title>Crummy: The Site</dc:title><dc:rights><Agent><dc:title>Crummy: the Site</dc:title></Agent></dc:rights><dc:format>text/html</dc:format><license rdf:resource=http://creativecommons.org/licenses/by-sa/2.0//></Work><License rdf:about=\"http://creativecommons.org/licenses/by-sa/2.0/\"></License></rdf:RDF>-->\n",
+      "    </td>\n",
+      "    <td valign=\"top\">\n",
+      "     <p>\n",
+      "      <b>\n",
+      "       Document tree:\n",
+      "      </b>\n",
+      "     </p>\n",
+      "     <dl>\n",
+      "      <dd>\n",
+      "       <a href=\"http://www.crummy.com/\">\n",
+      "        http://www.crummy.com/\n",
+      "       </a>\n",
+      "       <dl>\n",
+      "        <dd>\n",
+      "         <a href=\"http://www.crummy.com/software/\">\n",
+      "          software/\n",
+      "         </a>\n",
+      "         <dl>\n",
+      "          <dd>\n",
+      "           <a href=\"http://www.crummy.com/software/BeautifulSoup/\">\n",
+      "            BeautifulSoup/\n",
+      "           </a>\n",
+      "          </dd>\n",
+      "         </dl>\n",
+      "        </dd>\n",
+      "       </dl>\n",
+      "      </dd>\n",
+      "     </dl>\n",
+      "     Site Search:\n",
+      "     <form action=\"/search/\" method=\"get\">\n",
+      "      <input maxlength=\"255\" name=\"q\" type=\"text\" value=\"\"/>\n",
+      "     </form>\n",
+      "    </td>\n",
+      "   </tr>\n",
+      "  </table>\n",
+      " </body>\n",
+      "</html>\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "## compare the two print statements\n",
+    "# print soup\n",
+    "print soup.prettify()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The 'a' tags are interesting. They indicate links.\n",
+    "\n",
+    "Here's how to find all of the 'a' tags:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[<a href=\"bs4/download/\"><h1>Beautiful Soup</h1></a>,\n",
+       " <a href=\"#Download\">Download</a>,\n",
+       " <a href=\"bs4/doc/\">Documentation</a>,\n",
+       " <a href=\"#HallOfFame\">Hall of Fame</a>,\n",
+       " <a href=\"https://code.launchpad.net/beautifulsoup\">Source</a>,\n",
+       " <a href=\"https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup\">Discussion group</a>,\n",
+       " <a href=\"http://www.candlemarkandgleam.com/shop/constellation-games/\"><i>Constellation\\nGames</i>, my sci-fi novel about alien video games</a>,\n",
+       " <a href=\"http://constellation.crummy.com/Constellation%20Games%20excerpt.html\">read\\nthe first two chapters for free</a>,\n",
+       " <a href=\"https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup\">the discussion\\ngroup</a>,\n",
+       " <a href=\"https://bugs.launchpad.net/beautifulsoup/\">file it</a>,\n",
+       " <a href=\"http://lxml.de/\">lxml</a>,\n",
+       " <a href=\"http://code.google.com/p/html5lib/\">html5lib</a>,\n",
+       " <a href=\"bs4/doc/\">Read more.</a>,\n",
+       " <a name=\"Download\"><h2>Download Beautiful Soup</h2></a>,\n",
+       " <a href=\"bs4/download/\">Beautiful Soup\\n4.5.3</a>,\n",
+       " <a href=\"http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html\">Here's\\nthe Beautiful Soup 3 documentation.</a>,\n",
+       " <a href=\"download/3.x/BeautifulSoup-3.2.1.tar.gz\">3.2.1</a>,\n",
+       " <a name=\"HallOfFame\"><h2>Hall of Fame</h2></a>,\n",
+       " <a href=\"http://www.nytimes.com/2007/10/25/arts/design/25vide.html\">\"Movable\\n Type\"</a>,\n",
+       " <a href=\"https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py\">parse\\na page that's been linked to and find a representative image</a>,\n",
+       " <a href=\"http://www.harrowell.org.uk/viktormap.html\">track the business\\n activities</a>,\n",
+       " <a href=\"http://svn.python.org/view/tracker/importer/\">migrate the Python\\nbug tracker from Sourceforge to Roundup</a>,\n",
+       " <a href=\"http://www2.ljworld.com/\">Lawrence Journal-World</a>,\n",
+       " <a href=\"http://www.b-list.org/weblog/2010/nov/02/news-done-broke/\">gather\\nstatewide election results</a>,\n",
+       " <a href=\"http://esrl.noaa.gov/gsd/fab/\">NOAA's Forecast\\nApplications Branch</a>,\n",
+       " <a href=\"http://laps.noaa.gov/topograbber/\">TopoGrabber</a>,\n",
+       " <a href=\"http://groups.google.com/group/beautifulsoup/\">the discussion\\ngroup</a>,\n",
+       " <a href=\"https://launchpad.net/beautifulsoup\">Launchpad</a>,\n",
+       " <a href=\"https://code.launchpad.net/beautifulsoup/\">get the source\\ncode</a>,\n",
+       " <a href=\"https://bugs.launchpad.net/beautifulsoup/\">file\\nbugs</a>,\n",
+       " <a href=\"/source/software/BeautifulSoup/index.bhtml\">source</a>,\n",
+       " <a href=\"/self/\">Leonard Richardson</a>,\n",
+       " <a href=\"/self/contact.html\">contact information</a>,\n",
+       " <a href=\"http://creativecommons.org/licenses/by-sa/2.0/\"><img border=\"0\" src=\"/nb//resources/img/somerights20.jpg\"/></a>,\n",
+       " <a href=\"http://creativecommons.org/licenses/by-sa/2.0/\">Creative Commons License</a>,\n",
+       " <a href=\"http://www.crummy.com/\">http://www.crummy.com/</a>,\n",
+       " <a href=\"http://www.crummy.com/software/\">software/</a>,\n",
+       " <a href=\"http://www.crummy.com/software/BeautifulSoup/\">BeautifulSoup/</a>]"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "soup.findAll('a')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[]"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "soup.findAll('Soup')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The last command only returns an empty list, because `Soup` is not an HTML tag. It's just a string that occurs in the webpage."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "We can do some other intersting things with our Beautiful Soup element `soup`.\n",
+    "\n",
+    "Get the first occurrence of something."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<a href=\"bs4/download/\"><h1>Beautiful Soup</h1></a>"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "first_tag = soup.find('a')\n",
+    "first_tag"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "First `href`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'bs4/download/'"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "first_tag.get('href')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Get all links in the page."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['bs4/download/',\n",
+       " '#Download',\n",
+       " 'bs4/doc/',\n",
+       " '#HallOfFame',\n",
+       " 'https://code.launchpad.net/beautifulsoup',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'http://www.candlemarkandgleam.com/shop/constellation-games/',\n",
+       " 'http://constellation.crummy.com/Constellation%20Games%20excerpt.html',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " 'http://lxml.de/',\n",
+       " 'http://code.google.com/p/html5lib/',\n",
+       " 'bs4/doc/',\n",
+       " None,\n",
+       " 'bs4/download/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html',\n",
+       " 'download/3.x/BeautifulSoup-3.2.1.tar.gz',\n",
+       " None,\n",
+       " 'http://www.nytimes.com/2007/10/25/arts/design/25vide.html',\n",
+       " 'https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py',\n",
+       " 'http://www.harrowell.org.uk/viktormap.html',\n",
+       " 'http://svn.python.org/view/tracker/importer/',\n",
+       " 'http://www2.ljworld.com/',\n",
+       " 'http://www.b-list.org/weblog/2010/nov/02/news-done-broke/',\n",
+       " 'http://esrl.noaa.gov/gsd/fab/',\n",
+       " 'http://laps.noaa.gov/topograbber/',\n",
+       " 'http://groups.google.com/group/beautifulsoup/',\n",
+       " 'https://launchpad.net/beautifulsoup',\n",
+       " 'https://code.launchpad.net/beautifulsoup/',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " '/source/software/BeautifulSoup/index.bhtml',\n",
+       " '/self/',\n",
+       " '/self/contact.html',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://www.crummy.com/',\n",
+       " 'http://www.crummy.com/software/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/']"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "link_list = [l.get('href') for l in soup.findAll('a')]\n",
+    "link_list"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Filter all external links"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "TypeError",
+     "evalue": "'NoneType' object has no attribute '__getitem__'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mTypeError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-13-20ad78599cfc>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      6\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      7\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0ml\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mlink_list\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 8\u001b[0;31m     \u001b[0;32mif\u001b[0m \u001b[0ml\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;36m4\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m==\u001b[0m \u001b[0;34m'http'\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      9\u001b[0m         \u001b[0mexternal_links\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mappend\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0ml\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mTypeError\u001b[0m: 'NoneType' object has no attribute '__getitem__'"
+     ]
+    }
+   ],
+   "source": [
+    "# create an empty list to collect the valid links\n",
+    "external_links = []\n",
+    "\n",
+    "# write a loop to filter the links\n",
+    "# if it starts with 'http' we are happy\n",
+    "\n",
+    "for l in link_list:\n",
+    "    if l[:4] == 'http':\n",
+    "        external_links.append(l)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "This throws an error! Let's investigate.\n",
+    "\n",
+    "Have a closer look at `link_list`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['bs4/download/',\n",
+       " '#Download',\n",
+       " 'bs4/doc/',\n",
+       " '#HallOfFame',\n",
+       " 'https://code.launchpad.net/beautifulsoup',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'http://www.candlemarkandgleam.com/shop/constellation-games/',\n",
+       " 'http://constellation.crummy.com/Constellation%20Games%20excerpt.html',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " 'http://lxml.de/',\n",
+       " 'http://code.google.com/p/html5lib/',\n",
+       " 'bs4/doc/',\n",
+       " None,\n",
+       " 'bs4/download/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html',\n",
+       " 'download/3.x/BeautifulSoup-3.2.1.tar.gz',\n",
+       " None,\n",
+       " 'http://www.nytimes.com/2007/10/25/arts/design/25vide.html',\n",
+       " 'https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py',\n",
+       " 'http://www.harrowell.org.uk/viktormap.html',\n",
+       " 'http://svn.python.org/view/tracker/importer/',\n",
+       " 'http://www2.ljworld.com/',\n",
+       " 'http://www.b-list.org/weblog/2010/nov/02/news-done-broke/',\n",
+       " 'http://esrl.noaa.gov/gsd/fab/',\n",
+       " 'http://laps.noaa.gov/topograbber/',\n",
+       " 'http://groups.google.com/group/beautifulsoup/',\n",
+       " 'https://launchpad.net/beautifulsoup',\n",
+       " 'https://code.launchpad.net/beautifulsoup/',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " '/source/software/BeautifulSoup/index.bhtml',\n",
+       " '/self/',\n",
+       " '/self/contact.html',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://www.crummy.com/',\n",
+       " 'http://www.crummy.com/software/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/']"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "link_list"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Aha! There are some 'None' elements. Let's verify:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "2"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sum([l is None for l in link_list])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "There are two elements in the list that are None! Let's filter those out in the `for` loop:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['https://code.launchpad.net/beautifulsoup',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'http://www.candlemarkandgleam.com/shop/constellation-games/',\n",
+       " 'http://constellation.crummy.com/Constellation%20Games%20excerpt.html',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " 'http://lxml.de/',\n",
+       " 'http://code.google.com/p/html5lib/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html',\n",
+       " 'http://www.nytimes.com/2007/10/25/arts/design/25vide.html',\n",
+       " 'https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py',\n",
+       " 'http://www.harrowell.org.uk/viktormap.html',\n",
+       " 'http://svn.python.org/view/tracker/importer/',\n",
+       " 'http://www2.ljworld.com/',\n",
+       " 'http://www.b-list.org/weblog/2010/nov/02/news-done-broke/',\n",
+       " 'http://esrl.noaa.gov/gsd/fab/',\n",
+       " 'http://laps.noaa.gov/topograbber/',\n",
+       " 'http://groups.google.com/group/beautifulsoup/',\n",
+       " 'https://launchpad.net/beautifulsoup',\n",
+       " 'https://code.launchpad.net/beautifulsoup/',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://www.crummy.com/',\n",
+       " 'http://www.crummy.com/software/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/']"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "external_links = []\n",
+    "\n",
+    "for l in link_list:\n",
+    "    if l != None and l[:4] == 'http':\n",
+    "        external_links.append(l)\n",
+    "        \n",
+    "external_links"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Note: The above `if` condition works because of lazy evaluation in Python. The `and` statement becomes `False` if the first part is `False`, so there is no need to ever evaluate the second part. Thus a `None` entry in the list gets never asked about its first four characters. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Here's a more elegant version:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['https://code.launchpad.net/beautifulsoup',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'http://www.candlemarkandgleam.com/shop/constellation-games/',\n",
+       " 'http://constellation.crummy.com/Constellation%20Games%20excerpt.html',\n",
+       " 'https://groups.google.com/forum/?fromgroups#!forum/beautifulsoup',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " 'http://lxml.de/',\n",
+       " 'http://code.google.com/p/html5lib/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/bs3/documentation.html',\n",
+       " 'http://www.nytimes.com/2007/10/25/arts/design/25vide.html',\n",
+       " 'https://github.com/reddit/reddit/blob/85f9cff3e2ab9bb8f19b96acd8da4ebacc079f04/r2/r2/lib/media.py',\n",
+       " 'http://www.harrowell.org.uk/viktormap.html',\n",
+       " 'http://svn.python.org/view/tracker/importer/',\n",
+       " 'http://www2.ljworld.com/',\n",
+       " 'http://www.b-list.org/weblog/2010/nov/02/news-done-broke/',\n",
+       " 'http://esrl.noaa.gov/gsd/fab/',\n",
+       " 'http://laps.noaa.gov/topograbber/',\n",
+       " 'http://groups.google.com/group/beautifulsoup/',\n",
+       " 'https://launchpad.net/beautifulsoup',\n",
+       " 'https://code.launchpad.net/beautifulsoup/',\n",
+       " 'https://bugs.launchpad.net/beautifulsoup/',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://creativecommons.org/licenses/by-sa/2.0/',\n",
+       " 'http://www.crummy.com/',\n",
+       " 'http://www.crummy.com/software/',\n",
+       " 'http://www.crummy.com/software/BeautifulSoup/']"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "external_links = [l for l in link_list if l != None and l.startswith('http')]\n",
+    "external_links"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Recap\n",
+    "\n",
+    "With just a few lines of Python code, we have extracted all of the external links from a webpage. We could do more extensive parsing of the HTML 'tree,' but let's move on for now."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Getting Data with an API\n",
+    "* API: application programming interface\n",
+    "* Some sites try to make your life easier\n",
+    "* Twitter, New York Times, IMDb, Yelp, ..."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Before we go further, we need to review Python dictionaries and introduce the JSON data format."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Python Dictonaries\n",
+    "\n",
+    "* Built-in data type\n",
+    "* Uses key: value pairs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'a': 1, 'b': 2}"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "a = {'a': 1, 'b':2}\n",
+    "a"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Show keys"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['a', 'b']"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "a.keys()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Show values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[1, 2]"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "a.values()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Loop over all entries - two ways:\n",
+    "\n",
+    "First, use `zip` - also works for iterating over any other two lists"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "a 1\n",
+      "b 2\n"
+     ]
+    }
+   ],
+   "source": [
+    "for k,v in zip(a.keys(), a.values()):\n",
+    "    print k,v"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Next, use `iteritems()`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false,
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "a 1\n",
+      "b 2\n"
+     ]
+    }
+   ],
+   "source": [
+    "for k,v in a.iteritems():\n",
+    "    print k,v"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## JSON\n",
+    "\n",
+    "* JavaScript Object Notation\n",
+    "* Human readable\n",
+    "* Transmit attribute-value pairs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "a = {'a': 1, 'b':2}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "dict"
+      ]
+     },
+     "execution_count": 24,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(a)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import json\n",
+    "\n",
+    "s = json.dumps(a)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "str"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(s)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "s is a string containing a in JSON encoding"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'{\"a\": 1, \"b\": 2}'"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "s"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {
+    "collapsed": true,
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "a2 = json.loads(s)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "dict"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(a2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Reading back, the keys are now in unicode."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{u'a': 1, u'b': 2}"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "a2"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "source": [
+    "## Twitter\n",
+    "\n",
+    "* API a bit more complicated\n",
+    "* Libraries make life easier\n",
+    "* twitter:\n",
+    "https://github.com/sixohsix/twitter\n",
+    "\n",
+    "Key: https://apps.twitter.com"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Caveat!\n",
+    "\n",
+    "There are several good libraries that work well in Python for grabbing information from Twitter and Twitter live streams. They don't all use the same form of function calls, but more than one of them uses the same `import twitter` command. You could avoid the confusion by using `Tweepy`, but we're using the one you get when you do this:\n",
+    "\n",
+    "`pip install twitter`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Connect to Twitter"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 44,
+   "metadata": {
+    "collapsed": false,
+    "slideshow": {
+     "slide_type": "slide"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<twitter.stream.TwitterStream object at 0x107f86e90>\n",
+      "<twitter.api.Twitter object at 0x107f86e10>\n"
+     ]
+    }
+   ],
+   "source": [
+    "import twitter\n",
+    "\n",
+    "cKey = 'NOd2hARpEBXWC0abHSPyIup9v'\n",
+    "cSecret = 'MeLYJV8LUZSHtHY73O45W7lUuqkTHxwfqE5v4hPrMU1PTzGvI1'\n",
+    "aKey = '832163748097843200-6vFmvRTMrVeRPLf2jh45C1kBGaDYlSE'\n",
+    "aSecret = 'LHW7VI7C96D3MufnMhbEK2E2D8JidOnAbrzcr7cmfn5mM'\n",
+    "\n",
+    "auth = twitter.oauth.OAuth(aKey, aSecret, cKey, cSecret)\n",
+    "\n",
+    "twitter_api = twitter.Twitter(auth=auth)\n",
+    "twitter_stream = twitter.TwitterStream(auth=auth)\n",
+    "\n",
+    "print twitter_stream\n",
+    "print twitter_api"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Get some tweets"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Get your \"home\" timeline:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[]"
+      ]
+     },
+     "execution_count": 45,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_api.statuses.home_timeline()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Get the user timeline with screen_name = 'OregonStateMBA'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "100"
+      ]
+     },
+     "execution_count": 80,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_statuses = twitter_api.statuses.user_timeline(screen_name='OregonStateMBA', count=100)\n",
+    "len(twitter_statuses)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "twitter.api.TwitterListResponse"
+      ]
+     },
+     "execution_count": 47,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(twitter_statuses)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The first tweet in the 'OregonStateMBA' timeline:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 48,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{u'contributors': None,\n",
+       " u'coordinates': None,\n",
+       " u'created_at': u'Wed Oct 21 18:32:27 +0000 2015',\n",
+       " u'entities': {u'hashtags': [{u'indices': [62, 66], u'text': u'MBA'}],\n",
+       "  u'symbols': [],\n",
+       "  u'urls': [{u'display_url': u'bloomberg.com/news/articles/\\u2026',\n",
+       "    u'expanded_url': u'http://www.bloomberg.com/news/articles/2015-10-20/the-real-cost-of-an-mba-is-different-for-men-and-women',\n",
+       "    u'indices': [82, 105],\n",
+       "    u'url': u'https://t.co/WRn8SkxmPt'}],\n",
+       "  u'user_mentions': [{u'id': 34713362,\n",
+       "    u'id_str': u'34713362',\n",
+       "    u'indices': [72, 81],\n",
+       "    u'name': u'Bloomberg',\n",
+       "    u'screen_name': u'business'}]},\n",
+       " u'favorite_count': 1,\n",
+       " u'favorited': False,\n",
+       " u'geo': None,\n",
+       " u'id': 656900874942320640,\n",
+       " u'id_str': u'656900874942320640',\n",
+       " u'in_reply_to_screen_name': None,\n",
+       " u'in_reply_to_status_id': None,\n",
+       " u'in_reply_to_status_id_str': None,\n",
+       " u'in_reply_to_user_id': None,\n",
+       " u'in_reply_to_user_id_str': None,\n",
+       " u'is_quote_status': False,\n",
+       " u'lang': u'en',\n",
+       " u'place': None,\n",
+       " u'possibly_sensitive': False,\n",
+       " u'retweet_count': 0,\n",
+       " u'retweeted': False,\n",
+       " u'source': u'<a href=\"http://twitter.com/#!/download/ipad\" rel=\"nofollow\">Twitter for iPad</a>',\n",
+       " u'text': u'Is there a difference in ROI between men and women earning an #MBA? via @business https://t.co/WRn8SkxmPt',\n",
+       " u'truncated': False,\n",
+       " u'user': {u'contributors_enabled': False,\n",
+       "  u'created_at': u'Mon Oct 06 19:33:40 +0000 2014',\n",
+       "  u'default_profile': True,\n",
+       "  u'default_profile_image': False,\n",
+       "  u'description': u'',\n",
+       "  u'entities': {u'description': {u'urls': []}},\n",
+       "  u'favourites_count': 30,\n",
+       "  u'follow_request_sent': False,\n",
+       "  u'followers_count': 294,\n",
+       "  u'following': False,\n",
+       "  u'friends_count': 782,\n",
+       "  u'geo_enabled': True,\n",
+       "  u'has_extended_profile': False,\n",
+       "  u'id': 2842634936,\n",
+       "  u'id_str': u'2842634936',\n",
+       "  u'is_translation_enabled': False,\n",
+       "  u'is_translator': False,\n",
+       "  u'lang': u'en',\n",
+       "  u'listed_count': 10,\n",
+       "  u'location': u'Corvallis, Oregon ',\n",
+       "  u'name': u'Oregon State MBA',\n",
+       "  u'notifications': False,\n",
+       "  u'profile_background_color': u'C0DEED',\n",
+       "  u'profile_background_image_url': u'http://abs.twimg.com/images/themes/theme1/bg.png',\n",
+       "  u'profile_background_image_url_https': u'https://abs.twimg.com/images/themes/theme1/bg.png',\n",
+       "  u'profile_background_tile': False,\n",
+       "  u'profile_banner_url': u'https://pbs.twimg.com/profile_banners/2842634936/1412624550',\n",
+       "  u'profile_image_url': u'http://pbs.twimg.com/profile_images/519210936020631552/pMqLp5u4_normal.jpeg',\n",
+       "  u'profile_image_url_https': u'https://pbs.twimg.com/profile_images/519210936020631552/pMqLp5u4_normal.jpeg',\n",
+       "  u'profile_link_color': u'1DA1F2',\n",
+       "  u'profile_sidebar_border_color': u'C0DEED',\n",
+       "  u'profile_sidebar_fill_color': u'DDEEF6',\n",
+       "  u'profile_text_color': u'333333',\n",
+       "  u'profile_use_background_image': True,\n",
+       "  u'protected': False,\n",
+       "  u'screen_name': u'OregonStateMBA',\n",
+       "  u'statuses_count': 340,\n",
+       "  u'time_zone': None,\n",
+       "  u'translator_type': u'none',\n",
+       "  u'url': None,\n",
+       "  u'utc_offset': None,\n",
+       "  u'verified': False}}"
+      ]
+     },
+     "execution_count": 48,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_statuses[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The screen name of the user who wrote the first tweet in that timeline:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "u'OregonStateMBA'"
+      ]
+     },
+     "execution_count": 49,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_statuses[0]['user']['screen_name']"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We can create a pandas DataFrame timeline tweets. First, we create a Series. Then we use it to create the DataFrame."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 50,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "pdSeriesList = [pd.Series(t) for t in twitter_statuses]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>contributors</th>\n",
+       "      <th>coordinates</th>\n",
+       "      <th>created_at</th>\n",
+       "      <th>entities</th>\n",
+       "      <th>extended_entities</th>\n",
+       "      <th>favorite_count</th>\n",
+       "      <th>favorited</th>\n",
+       "      <th>geo</th>\n",
+       "      <th>id</th>\n",
+       "      <th>id_str</th>\n",
+       "      <th>...</th>\n",
+       "      <th>quoted_status</th>\n",
+       "      <th>quoted_status_id</th>\n",
+       "      <th>quoted_status_id_str</th>\n",
+       "      <th>retweet_count</th>\n",
+       "      <th>retweeted</th>\n",
+       "      <th>retweeted_status</th>\n",
+       "      <th>source</th>\n",
+       "      <th>text</th>\n",
+       "      <th>truncated</th>\n",
+       "      <th>user</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>None</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Wed Oct 21 18:32:27 +0000 2015</td>\n",
+       "      <td>{u'symbols': [], u'user_mentions': [{u'id': 34...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>1</td>\n",
+       "      <td>False</td>\n",
+       "      <td>None</td>\n",
+       "      <td>656900874942320640</td>\n",
+       "      <td>656900874942320640</td>\n",
+       "      <td>...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0</td>\n",
+       "      <td>False</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>&lt;a href=\"http://twitter.com/#!/download/ipad\" ...</td>\n",
+       "      <td>Is there a difference in ROI between men and w...</td>\n",
+       "      <td>False</td>\n",
+       "      <td>{u'follow_request_sent': False, u'has_extended...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>None</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Wed Sep 23 01:13:51 +0000 2015</td>\n",
+       "      <td>{u'symbols': [], u'user_mentions': [], u'hasht...</td>\n",
+       "      <td>{u'media': [{u'expanded_url': u'https://twitte...</td>\n",
+       "      <td>2</td>\n",
+       "      <td>False</td>\n",
+       "      <td>None</td>\n",
+       "      <td>646492640100282368</td>\n",
+       "      <td>646492640100282368</td>\n",
+       "      <td>...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>0</td>\n",
+       "      <td>False</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>&lt;a href=\"http://www.apple.com\" rel=\"nofollow\"&gt;...</td>\n",
+       "      <td>New #mba student orientation is off to a great...</td>\n",
+       "      <td>False</td>\n",
+       "      <td>{u'follow_request_sent': False, u'has_extended...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>2 rows × 29 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  contributors coordinates                      created_at  \\\n",
+       "0         None        None  Wed Oct 21 18:32:27 +0000 2015   \n",
+       "1         None        None  Wed Sep 23 01:13:51 +0000 2015   \n",
+       "\n",
+       "                                            entities  \\\n",
+       "0  {u'symbols': [], u'user_mentions': [{u'id': 34...   \n",
+       "1  {u'symbols': [], u'user_mentions': [], u'hasht...   \n",
+       "\n",
+       "                                   extended_entities  favorite_count  \\\n",
+       "0                                                NaN               1   \n",
+       "1  {u'media': [{u'expanded_url': u'https://twitte...               2   \n",
+       "\n",
+       "  favorited   geo                  id              id_str  \\\n",
+       "0     False  None  656900874942320640  656900874942320640   \n",
+       "1     False  None  646492640100282368  646492640100282368   \n",
+       "\n",
+       "                         ...                         quoted_status  \\\n",
+       "0                        ...                                   NaN   \n",
+       "1                        ...                                   NaN   \n",
+       "\n",
+       "   quoted_status_id quoted_status_id_str  retweet_count retweeted  \\\n",
+       "0               NaN                  NaN              0     False   \n",
+       "1               NaN                  NaN              0     False   \n",
+       "\n",
+       "  retweeted_status                                             source  \\\n",
+       "0              NaN  <a href=\"http://twitter.com/#!/download/ipad\" ...   \n",
+       "1              NaN  <a href=\"http://www.apple.com\" rel=\"nofollow\">...   \n",
+       "\n",
+       "                                                text truncated  \\\n",
+       "0  Is there a difference in ROI between men and w...     False   \n",
+       "1  New #mba student orientation is off to a great...     False   \n",
+       "\n",
+       "                                                user  \n",
+       "0  {u'follow_request_sent': False, u'has_extended...  \n",
+       "1  {u'follow_request_sent': False, u'has_extended...  \n",
+       "\n",
+       "[2 rows x 29 columns]"
+      ]
+     },
+     "execution_count": 51,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df = pd.DataFrame(pdSeriesList)\n",
+    "df.head(2)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Suppose we just want to consider things that have been interesting enough to be retweeted at least 10 times."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 52,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "3"
+      ]
+     },
+     "execution_count": 52,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "may_be_interesting = df[df.retweet_count>10]\n",
+    "len(may_be_interesting)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Hmmm ... that's not very many!\n",
+    "\n",
+    "Let's try all of this for 'BillGates':"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 53,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>contributors</th>\n",
+       "      <th>coordinates</th>\n",
+       "      <th>created_at</th>\n",
+       "      <th>entities</th>\n",
+       "      <th>extended_entities</th>\n",
+       "      <th>favorite_count</th>\n",
+       "      <th>favorited</th>\n",
+       "      <th>geo</th>\n",
+       "      <th>id</th>\n",
+       "      <th>id_str</th>\n",
+       "      <th>...</th>\n",
+       "      <th>quoted_status</th>\n",
+       "      <th>quoted_status_id</th>\n",
+       "      <th>quoted_status_id_str</th>\n",
+       "      <th>retweet_count</th>\n",
+       "      <th>retweeted</th>\n",
+       "      <th>retweeted_status</th>\n",
+       "      <th>source</th>\n",
+       "      <th>text</th>\n",
+       "      <th>truncated</th>\n",
+       "      <th>user</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>None</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Sat Feb 18 15:54:01 +0000 2017</td>\n",
+       "      <td>{u'symbols': [], u'user_mentions': [], u'hasht...</td>\n",
+       "      <td>{u'media': [{u'expanded_url': u'https://twitte...</td>\n",
+       "      <td>6375</td>\n",
+       "      <td>False</td>\n",
+       "      <td>None</td>\n",
+       "      <td>832981503705546754</td>\n",
+       "      <td>832981503705546754</td>\n",
+       "      <td>...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>3177</td>\n",
+       "      <td>False</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>&lt;a href=\"https://www.sprinklr.com\" rel=\"nofoll...</td>\n",
+       "      <td>For every $1 spent on childhood vaccines, you ...</td>\n",
+       "      <td>False</td>\n",
+       "      <td>{u'follow_request_sent': False, u'has_extended...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>None</td>\n",
+       "      <td>None</td>\n",
+       "      <td>Fri Feb 17 23:44:39 +0000 2017</td>\n",
+       "      <td>{u'symbols': [], u'user_mentions': [{u'id': 21...</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>6754</td>\n",
+       "      <td>False</td>\n",
+       "      <td>None</td>\n",
+       "      <td>832737557913886721</td>\n",
+       "      <td>832737557913886721</td>\n",
+       "      <td>...</td>\n",
+       "      <td>{u'contributors': None, u'truncated': False, u...</td>\n",
+       "      <td>8.327281e+17</td>\n",
+       "      <td>832728052769566720</td>\n",
+       "      <td>1449</td>\n",
+       "      <td>False</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>&lt;a href=\"http://www.twitter.com\" rel=\"nofollow...</td>\n",
+       "      <td>.@IISuperwomanII challenged me to prove the wo...</td>\n",
+       "      <td>False</td>\n",
+       "      <td>{u'follow_request_sent': False, u'has_extended...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>2 rows × 29 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "  contributors coordinates                      created_at  \\\n",
+       "0         None        None  Sat Feb 18 15:54:01 +0000 2017   \n",
+       "1         None        None  Fri Feb 17 23:44:39 +0000 2017   \n",
+       "\n",
+       "                                            entities  \\\n",
+       "0  {u'symbols': [], u'user_mentions': [], u'hasht...   \n",
+       "1  {u'symbols': [], u'user_mentions': [{u'id': 21...   \n",
+       "\n",
+       "                                   extended_entities  favorite_count  \\\n",
+       "0  {u'media': [{u'expanded_url': u'https://twitte...            6375   \n",
+       "1                                                NaN            6754   \n",
+       "\n",
+       "  favorited   geo                  id              id_str  \\\n",
+       "0     False  None  832981503705546754  832981503705546754   \n",
+       "1     False  None  832737557913886721  832737557913886721   \n",
+       "\n",
+       "                         ...                          \\\n",
+       "0                        ...                           \n",
+       "1                        ...                           \n",
+       "\n",
+       "                                       quoted_status  quoted_status_id  \\\n",
+       "0                                                NaN               NaN   \n",
+       "1  {u'contributors': None, u'truncated': False, u...      8.327281e+17   \n",
+       "\n",
+       "  quoted_status_id_str  retweet_count retweeted retweeted_status  \\\n",
+       "0                  NaN           3177     False              NaN   \n",
+       "1   832728052769566720           1449     False              NaN   \n",
+       "\n",
+       "                                              source  \\\n",
+       "0  <a href=\"https://www.sprinklr.com\" rel=\"nofoll...   \n",
+       "1  <a href=\"http://www.twitter.com\" rel=\"nofollow...   \n",
+       "\n",
+       "                                                text truncated  \\\n",
+       "0  For every $1 spent on childhood vaccines, you ...     False   \n",
+       "1  .@IISuperwomanII challenged me to prove the wo...     False   \n",
+       "\n",
+       "                                                user  \n",
+       "0  {u'follow_request_sent': False, u'has_extended...  \n",
+       "1  {u'follow_request_sent': False, u'has_extended...  \n",
+       "\n",
+       "[2 rows x 29 columns]"
+      ]
+     },
+     "execution_count": 53,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_statuses = twitter_api.statuses.user_timeline(screen_name='BillGates', count=100)\n",
+    "pdSeriesList = [pd.Series(t) for t in twitter_statuses]\n",
+    "df = pd.DataFrame(pdSeriesList)\n",
+    "df.head(2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 54,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "100"
+      ]
+     },
+     "execution_count": 54,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "may_be_interesting = df[df.retweet_count>10]\n",
+    "len(may_be_interesting)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Wow! That guy gets retweeted!"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<matplotlib.axes._subplots.AxesSubplot at 0x116c72e90>"
+      ]
+     },
+     "execution_count": 81,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.retweet_count.hist()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "11993"
+      ]
+     },
+     "execution_count": 56,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.retweet_count.max()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "OK, let's narrow it down a bit:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 57,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 57,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "interesting = df[df.retweet_count>14000]\n",
+    "len(interesting)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Get the text of these tweets:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 58,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "tweet_text = interesting.text"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Series([], Name: text, dtype: object)"
+      ]
+     },
+     "execution_count": 59,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "tweet_text"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{u'contributors': None, u'truncated': False, u'text': u'David Bunnell was one of the pioneers of the PC industry. I\\u2019m sad to learn of his death: https://t.co/eVb4zL43o5 https://t.co/TdLEZjoamh', u'is_quote_status': False, u'in_reply_to_status_id': None, u'id': 789595623594926080, u'favorite_count': 3532, u'source': u'<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>', u'retweeted': False, u'coordinates': None, u'entities': {u'symbols': [], u'user_mentions': [], u'hashtags': [], u'urls': [{u'url': u'https://t.co/eVb4zL43o5', u'indices': [89, 112], u'expanded_url': u'http://b-gat.es/2erxUM8', u'display_url': u'b-gat.es/2erxUM8'}], u'media': [{u'expanded_url': u'https://twitter.com/BillGates/status/789595623594926080/photo/1', u'display_url': u'pic.twitter.com/TdLEZjoamh', u'url': u'https://t.co/TdLEZjoamh', u'media_url_https': u'https://pbs.twimg.com/media/CvUz8f6UAAARbp5.jpg', u'id_str': u'789594424124637184', u'sizes': {u'large': {u'h': 617, u'resize': u'fit', u'w': 920}, u'small': {u'h': 456, u'resize': u'fit', u'w': 680}, u'medium': {u'h': 617, u'resize': u'fit', u'w': 920}, u'thumb': {u'h': 150, u'resize': u'crop', u'w': 150}}, u'indices': [113, 136], u'type': u'photo', u'id': 789594424124637184, u'media_url': u'http://pbs.twimg.com/media/CvUz8f6UAAARbp5.jpg'}]}, u'in_reply_to_screen_name': None, u'in_reply_to_user_id': None, u'retweet_count': 1098, u'id_str': u'789595623594926080', u'favorited': False, u'user': {u'follow_request_sent': False, u'has_extended_profile': False, u'profile_use_background_image': False, u'default_profile_image': False, u'id': 50393960, u'profile_background_image_url_https': u'https://pbs.twimg.com/profile_background_images/542018712627187712/0AenG_nz.jpeg', u'verified': True, u'translator_type': u'regular', u'profile_text_color': u'333333', u'profile_image_url_https': u'https://pbs.twimg.com/profile_images/558109954561679360/j1f9DiJi_normal.jpeg', u'profile_sidebar_fill_color': u'DDEEF6', u'entities': {u'url': {u'urls': [{u'url': u'https://t.co/OyPElfZcqm', u'indices': [0, 23], u'expanded_url': u'http://www.gatesletter.com', u'display_url': u'gatesletter.com'}]}, u'description': {u'urls': []}}, u'followers_count': 33319654, u'profile_sidebar_border_color': u'000000', u'id_str': u'50393960', u'profile_background_color': u'C0DEED', u'listed_count': 120833, u'is_translation_enabled': False, u'utc_offset': -28800, u'statuses_count': 2264, u'description': u\"Sharing things I'm learning through my foundation work and other interests...\", u'friends_count': 183, u'location': u'Seattle, WA', u'profile_link_color': u'0084B4', u'profile_image_url': u'http://pbs.twimg.com/profile_images/558109954561679360/j1f9DiJi_normal.jpeg', u'following': False, u'geo_enabled': False, u'profile_banner_url': u'https://pbs.twimg.com/profile_banners/50393960/1487067131', u'profile_background_image_url': u'http://pbs.twimg.com/profile_background_images/542018712627187712/0AenG_nz.jpeg', u'screen_name': u'BillGates', u'lang': u'en', u'profile_background_tile': False, u'favourites_count': 18, u'name': u'Bill Gates', u'notifications': False, u'url': u'https://t.co/OyPElfZcqm', u'created_at': u'Wed Jun 24 18:44:10 +0000 2009', u'contributors_enabled': False, u'time_zone': u'Pacific Time (US & Canada)', u'protected': False, u'default_profile': False, u'is_translator': False}, u'geo': None, u'in_reply_to_user_id_str': None, u'possibly_sensitive': False, u'lang': u'en', u'created_at': u'Fri Oct 21 22:34:01 +0000 2016', u'in_reply_to_status_id_str': None, u'place': None, u'extended_entities': {u'media': [{u'expanded_url': u'https://twitter.com/BillGates/status/789595623594926080/photo/1', u'display_url': u'pic.twitter.com/TdLEZjoamh', u'url': u'https://t.co/TdLEZjoamh', u'media_url_https': u'https://pbs.twimg.com/media/CvUz8f6UAAARbp5.jpg', u'id_str': u'789594424124637184', u'sizes': {u'large': {u'h': 617, u'resize': u'fit', u'w': 920}, u'small': {u'h': 456, u'resize': u'fit', u'w': 680}, u'medium': {u'h': 617, u'resize': u'fit', u'w': 920}, u'thumb': {u'h': 150, u'resize': u'crop', u'w': 150}}, u'indices': [113, 136], u'type': u'photo', u'id': 789594424124637184, u'media_url': u'http://pbs.twimg.com/media/CvUz8f6UAAARbp5.jpg'}]}}\n"
+     ]
+    }
+   ],
+   "source": [
+    "for t in tweet_text.values:\n",
+    "    print '#####'\n",
+    "    \n",
+    "print t\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Searching hashtags"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Search for the latest tweets about #GRAMMYs"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 64,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "q = 'GRAMMYs'\n",
+    "search_results = twitter_api.search.tweets(q=q)\n",
+    "statuses = search_results['statuses']"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Here is a very handy function for extracting tweet entities:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 66,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "def extract_tweet_entities(statuses):\n",
+    "    \n",
+    "    # See https://dev.twitter.com/docs/tweet-entities for more details on tweet\n",
+    "    # entities\n",
+    "\n",
+    "    if len(statuses) == 0:\n",
+    "        return [], [], [], []\n",
+    "    \n",
+    "    screen_names = [ user_mention['screen_name'] \n",
+    "                         for status in statuses\n",
+    "                            for user_mention in status['entities']['user_mentions'] ]\n",
+    "    \n",
+    "    hashtags = [ hashtag['text'] \n",
+    "                     for status in statuses \n",
+    "                        for hashtag in status['entities']['hashtags'] ]\n",
+    "\n",
+    "    urls = [ url['expanded_url'] \n",
+    "                     for status in statuses \n",
+    "                        for url in status['entities']['urls'] ]\n",
+    "    \n",
+    "    symbols = [ symbol['text']\n",
+    "                   for status in statuses\n",
+    "                       for symbol in status['entities']['symbols'] ]\n",
+    "\n",
+    "    return screen_names, hashtags, urls, symbols\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now let's use it for the tweets returned by our hashtag search."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 67,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "screen_names, hashtags, urls, symbols = extract_tweet_entities(statuses)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Here are the first five items for each ..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 68,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Screen names:\n",
+      "[\n",
+      " \"WSHHVlDS\", \n",
+      " \"Bey_Legion\", \n",
+      " \"ComplexMusic\", \n",
+      " \"LALeakers\", \n",
+      " \"Drake\"\n",
+      "]\n",
+      "Hashtags:\n",
+      "[\n",
+      " \"GRAMMYs\", \n",
+      " \"GRAMMYs\", \n",
+      " \"OVOSoundRadio\", \n",
+      " \"OVOSoundRadio\", \n",
+      " \"DonaldTrump\"\n",
+      "]\n",
+      "URLs:\n",
+      "[\n",
+      " \"http://apple.co/Beats1\", \n",
+      " \"https://twitter.com/CandidlyCarlo/status/830909415540695040\"\n",
+      "]\n",
+      "Symbols:\n",
+      "[]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print \"Screen names:\"\n",
+    "print json.dumps(screen_names[0:5], indent=1) \n",
+    "print \"Hashtags:\"\n",
+    "print json.dumps(hashtags[0:5], indent=1)\n",
+    "print \"URLs:\"\n",
+    "print json.dumps(urls[0:5], indent=1)\n",
+    "print \"Symbols:\"\n",
+    "print json.dumps(symbols[0:5], indent=1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### See what's trending"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "One way to see what's trending is to use Where On Earth IDs.\n",
+    "\n",
+    "See: https://dev.twitter.com/docs/api/1.1/get/trends/place and http://developer.yahoo.com/geo/geoplanet/ for details."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 69,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[\n",
+      " {\n",
+      "  \"created_at\": \"2017-02-19T00:51:02Z\", \n",
+      "  \"trends\": [\n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23TrumpRally\", \n",
+      "    \"query\": \"%23TrumpRally\", \n",
+      "    \"tweet_volume\": 113444, \n",
+      "    \"name\": \"#TrumpRally\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23TheVoice\", \n",
+      "    \"query\": \"%23TheVoice\", \n",
+      "    \"tweet_volume\": 109698, \n",
+      "    \"name\": \"#TheVoice\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D9%86%D8%B7%D8%A7%D9%84%D8%A8_%D8%A8%D9%82%D8%AA%D9%84_%D8%AC%D9%85%D9%8A%D8%B9_%D8%A7%D9%84%D8%A8%D9%86%D8%A7%D8%AA\", \n",
+      "    \"query\": \"%23%D9%86%D8%B7%D8%A7%D9%84%D8%A8_%D8%A8%D9%82%D8%AA%D9%84_%D8%AC%D9%85%D9%8A%D8%B9_%D8%A7%D9%84%D8%A8%D9%86%D8%A7%D8%AA\", \n",
+      "    \"tweet_volume\": 21794, \n",
+      "    \"name\": \"#\\u0646\\u0637\\u0627\\u0644\\u0628_\\u0628\\u0642\\u062a\\u0644_\\u062c\\u0645\\u064a\\u0639_\\u0627\\u0644\\u0628\\u0646\\u0627\\u062a\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23AaronsNewVideo\", \n",
+      "    \"query\": \"%23AaronsNewVideo\", \n",
+      "    \"tweet_volume\": 178138, \n",
+      "    \"name\": \"#AaronsNewVideo\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23cepostaperte\", \n",
+      "    \"query\": \"%23cepostaperte\", \n",
+      "    \"tweet_volume\": 49618, \n",
+      "    \"name\": \"#cepostaperte\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%E5%B1%95%E7%A4%BA%E3%82%AE%E3%83%A3%E3%83%A9%E3%83%AA%E3%83%BC\", \n",
+      "    \"query\": \"%E5%B1%95%E7%A4%BA%E3%82%AE%E3%83%A3%E3%83%A9%E3%83%AA%E3%83%BC\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"\\u5c55\\u793a\\u30ae\\u30e3\\u30e9\\u30ea\\u30fc\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=Mirassol\", \n",
+      "    \"query\": \"Mirassol\", \n",
+      "    \"tweet_volume\": 12083, \n",
+      "    \"name\": \"Mirassol\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22HARMONY+DAY+TALENTFM%22\", \n",
+      "    \"query\": \"%22HARMONY+DAY+TALENTFM%22\", \n",
+      "    \"tweet_volume\": 88960, \n",
+      "    \"name\": \"HARMONY DAY TALENTFM\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Lana+Del+Rey%22\", \n",
+      "    \"query\": \"%22Lana+Del+Rey%22\", \n",
+      "    \"tweet_volume\": 70305, \n",
+      "    \"name\": \"Lana Del Rey\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=Kemen\", \n",
+      "    \"query\": \"Kemen\", \n",
+      "    \"tweet_volume\": 21074, \n",
+      "    \"name\": \"Kemen\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22LUCHO+POR+TU+FELICIDAD+MICA%22\", \n",
+      "    \"query\": \"%22LUCHO+POR+TU+FELICIDAD+MICA%22\", \n",
+      "    \"tweet_volume\": 17154, \n",
+      "    \"name\": \"LUCHO POR TU FELICIDAD MICA\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22CARYL+IS+COMING%22\", \n",
+      "    \"query\": \"%22CARYL+IS+COMING%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"CARYL IS COMING\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%E3%81%82%E3%81%8A%E3%81%84%E3%81%A1%E3%82%83%E3%82%93\", \n",
+      "    \"query\": \"%E3%81%82%E3%81%8A%E3%81%84%E3%81%A1%E3%82%83%E3%82%93\", \n",
+      "    \"tweet_volume\": 11484, \n",
+      "    \"name\": \"\\u3042\\u304a\\u3044\\u3061\\u3083\\u3093\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D9%83%D9%84%D9%85%D9%87_%D8%A8%D9%82%D9%84%D8%A8%D9%83_%D8%AA%D9%82%D9%88%D9%84%D9%87%D8%A7\", \n",
+      "    \"query\": \"%23%D9%83%D9%84%D9%85%D9%87_%D8%A8%D9%82%D9%84%D8%A8%D9%83_%D8%AA%D9%82%D9%88%D9%84%D9%87%D8%A7\", \n",
+      "    \"tweet_volume\": 33481, \n",
+      "    \"name\": \"#\\u0643\\u0644\\u0645\\u0647_\\u0628\\u0642\\u0644\\u0628\\u0643_\\u062a\\u0642\\u0648\\u0644\\u0647\\u0627\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23ONPC\", \n",
+      "    \"query\": \"%23ONPC\", \n",
+      "    \"tweet_volume\": 10562, \n",
+      "    \"name\": \"#ONPC\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23COAC2017C6\", \n",
+      "    \"query\": \"%23COAC2017C6\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#COAC2017C6\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23precure\", \n",
+      "    \"query\": \"%23precure\", \n",
+      "    \"tweet_volume\": 59908, \n",
+      "    \"name\": \"#precure\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23FamilyGras2017\", \n",
+      "    \"query\": \"%23FamilyGras2017\", \n",
+      "    \"tweet_volume\": 24955, \n",
+      "    \"name\": \"#FamilyGras2017\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23nitiasa\", \n",
+      "    \"query\": \"%23nitiasa\", \n",
+      "    \"tweet_volume\": 83743, \n",
+      "    \"name\": \"#nitiasa\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23VamosColoColo\", \n",
+      "    \"query\": \"%23VamosColoColo\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#VamosColoColo\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D9%85%D8%B1%D8%A7%D9%82%D8%B5_%D8%A8%D8%B1%D8%B9%D8%A7%D9%8A%D9%87_%D9%87%D9%8A%D9%8A%D9%87_%D8%A7%D9%84%D8%AA%D8%B1%D9%81%D9%8A%D9%87\", \n",
+      "    \"query\": \"%23%D9%85%D8%B1%D8%A7%D9%82%D8%B5_%D8%A8%D8%B1%D8%B9%D8%A7%D9%8A%D9%87_%D9%87%D9%8A%D9%8A%D9%87_%D8%A7%D9%84%D8%AA%D8%B1%D9%81%D9%8A%D9%87\", \n",
+      "    \"tweet_volume\": 49741, \n",
+      "    \"name\": \"#\\u0645\\u0631\\u0627\\u0642\\u0635_\\u0628\\u0631\\u0639\\u0627\\u064a\\u0647_\\u0647\\u064a\\u064a\\u0647_\\u0627\\u0644\\u062a\\u0631\\u0641\\u064a\\u0647\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D9%85%D9%86_%D8%A7%D9%83%D8%B0%D8%A8_%D9%85%D8%A7%D8%B3%D9%85%D8%B9%D8%AA\", \n",
+      "    \"query\": \"%23%D9%85%D9%86_%D8%A7%D9%83%D8%B0%D8%A8_%D9%85%D8%A7%D8%B3%D9%85%D8%B9%D8%AA\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#\\u0645\\u0646_\\u0627\\u0643\\u0630\\u0628_\\u0645\\u0627\\u0633\\u0645\\u0639\\u062a\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23MissBiopharma17\", \n",
+      "    \"query\": \"%23MissBiopharma17\", \n",
+      "    \"tweet_volume\": 15643, \n",
+      "    \"name\": \"#MissBiopharma17\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23ASOTFESTNL\", \n",
+      "    \"query\": \"%23ASOTFESTNL\", \n",
+      "    \"tweet_volume\": 13077, \n",
+      "    \"name\": \"#ASOTFESTNL\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23HistoricalCats\", \n",
+      "    \"query\": \"%23HistoricalCats\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#HistoricalCats\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23MostRequestedLive\", \n",
+      "    \"query\": \"%23MostRequestedLive\", \n",
+      "    \"tweet_volume\": 23058, \n",
+      "    \"name\": \"#MostRequestedLive\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D8%A7%D9%84%D9%87%D9%84%D8%A7%D9%84_%D8%A7%D9%84%D9%85%D9%84%D9%83%D9%8A_%D8%B3%D8%AA%D9%88%D9%86_%D8%B9%D8%A7%D9%85\", \n",
+      "    \"query\": \"%23%D8%A7%D9%84%D9%87%D9%84%D8%A7%D9%84_%D8%A7%D9%84%D9%85%D9%84%D9%83%D9%8A_%D8%B3%D8%AA%D9%88%D9%86_%D8%B9%D8%A7%D9%85\", \n",
+      "    \"tweet_volume\": 81376, \n",
+      "    \"name\": \"#\\u0627\\u0644\\u0647\\u0644\\u0627\\u0644_\\u0627\\u0644\\u0645\\u0644\\u0643\\u064a_\\u0633\\u062a\\u0648\\u0646_\\u0639\\u0627\\u0645\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23AcabouOHorarioDeVeraoEEu\", \n",
+      "    \"query\": \"%23AcabouOHorarioDeVeraoEEu\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#AcabouOHorarioDeVeraoEEu\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%E3%83%89%E3%83%A9%E3%82%B4%E3%83%B3%E3%83%9C%E3%83%BC%E3%83%AB%E8%B6%85\", \n",
+      "    \"query\": \"%23%E3%83%89%E3%83%A9%E3%82%B4%E3%83%B3%E3%83%9C%E3%83%BC%E3%83%AB%E8%B6%85\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#\\u30c9\\u30e9\\u30b4\\u30f3\\u30dc\\u30fc\\u30eb\\u8d85\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23OVOSoundRadio\", \n",
+      "    \"query\": \"%23OVOSoundRadio\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#OVOSoundRadio\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23L6Ncarmena\", \n",
+      "    \"query\": \"%23L6Ncarmena\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#L6Ncarmena\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23Gecenin%C5%9Eark%C4%B1s%C4%B1\", \n",
+      "    \"query\": \"%23Gecenin%C5%9Eark%C4%B1s%C4%B1\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#Gecenin\\u015eark\\u0131s\\u0131\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23wf2017w\", \n",
+      "    \"query\": \"%23wf2017w\", \n",
+      "    \"tweet_volume\": 118927, \n",
+      "    \"name\": \"#wf2017w\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23NationalDrinkWineDay\", \n",
+      "    \"query\": \"%23NationalDrinkWineDay\", \n",
+      "    \"tweet_volume\": 30950, \n",
+      "    \"name\": \"#NationalDrinkWineDay\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D8%A7%D8%AD%D8%A8%D9%83_%D8%A8%D8%B3_%D8%A7%D9%86%D9%83\", \n",
+      "    \"query\": \"%23%D8%A7%D8%AD%D8%A8%D9%83_%D8%A8%D8%B3_%D8%A7%D9%86%D9%83\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#\\u0627\\u062d\\u0628\\u0643_\\u0628\\u0633_\\u0627\\u0646\\u0643\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23BolsonaroMeRepresenta\", \n",
+      "    \"query\": \"%23BolsonaroMeRepresenta\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#BolsonaroMeRepresenta\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23LaMovidaEnEl13\", \n",
+      "    \"query\": \"%23LaMovidaEnEl13\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#LaMovidaEnEl13\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D8%A8%D8%AA%D9%88%D9%8A%D8%AA%D8%B1_%D9%83%D8%B1%D9%87%D8%AA\", \n",
+      "    \"query\": \"%23%D8%A8%D8%AA%D9%88%D9%8A%D8%AA%D8%B1_%D9%83%D8%B1%D9%87%D8%AA\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#\\u0628\\u062a\\u0648\\u064a\\u062a\\u0631_\\u0643\\u0631\\u0647\\u062a\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D8%AC%D9%8A%D8%B4_%D8%B9%D8%B5%D9%8A%D8%B1_%D8%B3%D9%8A%D8%B2%D8%B1_%D8%AC%D8%B2%D8%B1_%D9%88%D8%A8%D8%B1%D8%AA%D9%82%D8%A7%D9%84\", \n",
+      "    \"query\": \"%23%D8%AC%D9%8A%D8%B4_%D8%B9%D8%B5%D9%8A%D8%B1_%D8%B3%D9%8A%D8%B2%D8%B1_%D8%AC%D8%B2%D8%B1_%D9%88%D8%A8%D8%B1%D8%AA%D9%82%D8%A7%D9%84\", \n",
+      "    \"tweet_volume\": 14259, \n",
+      "    \"name\": \"#\\u062c\\u064a\\u0634_\\u0639\\u0635\\u064a\\u0631_\\u0633\\u064a\\u0632\\u0631_\\u062c\\u0632\\u0631_\\u0648\\u0628\\u0631\\u062a\\u0642\\u0627\\u0644\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D8%B1%D9%8A%D9%85_%D8%A7%D9%84%D8%B9%D8%AA%D9%8A%D8%A8%D9%8A_%D8%B3%D8%A7%D9%81%D8%B1%D8%AA_%D9%85%D9%83%D9%87\", \n",
+      "    \"query\": \"%23%D8%B1%D9%8A%D9%85_%D8%A7%D9%84%D8%B9%D8%AA%D9%8A%D8%A8%D9%8A_%D8%B3%D8%A7%D9%81%D8%B1%D8%AA_%D9%85%D9%83%D9%87\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#\\u0631\\u064a\\u0645_\\u0627\\u0644\\u0639\\u062a\\u064a\\u0628\\u064a_\\u0633\\u0627\\u0641\\u0631\\u062a_\\u0645\\u0643\\u0647\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23%D8%AD%D9%8A%D8%A7%D8%AA%D9%838\", \n",
+      "    \"query\": \"%23%D8%AD%D9%8A%D8%A7%D8%AA%D9%838\", \n",
+      "    \"tweet_volume\": 95268, \n",
+      "    \"name\": \"#\\u062d\\u064a\\u0627\\u062a\\u06438\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23Bellator172\", \n",
+      "    \"query\": \"%23Bellator172\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#Bellator172\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23MOTD\", \n",
+      "    \"query\": \"%23MOTD\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#MOTD\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23PurposeTourCDMX\", \n",
+      "    \"query\": \"%23PurposeTourCDMX\", \n",
+      "    \"tweet_volume\": 11647, \n",
+      "    \"name\": \"#PurposeTourCDMX\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23FinalMurgasLPGC\", \n",
+      "    \"query\": \"%23FinalMurgasLPGC\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#FinalMurgasLPGC\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23L6Npurorevilla\", \n",
+      "    \"query\": \"%23L6Npurorevilla\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#L6Npurorevilla\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23GobiernoDeA2Centavos\", \n",
+      "    \"query\": \"%23GobiernoDeA2Centavos\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#GobiernoDeA2Centavos\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23LiveNoInventoNaHoraTV\", \n",
+      "    \"query\": \"%23LiveNoInventoNaHoraTV\", \n",
+      "    \"tweet_volume\": 18689, \n",
+      "    \"name\": \"#LiveNoInventoNaHoraTV\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23melfest\", \n",
+      "    \"query\": \"%23melfest\", \n",
+      "    \"tweet_volume\": 24303, \n",
+      "    \"name\": \"#melfest\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23CARNAKPOP2017\", \n",
+      "    \"query\": \"%23CARNAKPOP2017\", \n",
+      "    \"tweet_volume\": 10351, \n",
+      "    \"name\": \"#CARNAKPOP2017\", \n",
+      "    \"promoted_content\": null\n",
+      "   }\n",
+      "  ], \n",
+      "  \"as_of\": \"2017-02-19T00:54:41Z\", \n",
+      "  \"locations\": [\n",
+      "   {\n",
+      "    \"woeid\": 1, \n",
+      "    \"name\": \"Worldwide\"\n",
+      "   }\n",
+      "  ]\n",
+      " }\n",
+      "]\n"
+     ]
+    }
+   ],
+   "source": [
+    "WORLD_WOE_ID = 1\n",
+    "world_trends = twitter_api.trends.place(_id=WORLD_WOE_ID)\n",
+    "print json.dumps(world_trends, indent=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 70,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[\n",
+      " {\n",
+      "  \"created_at\": \"2017-02-19T00:51:02Z\", \n",
+      "  \"trends\": [\n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23TrumpRally\", \n",
+      "    \"query\": \"%23TrumpRally\", \n",
+      "    \"tweet_volume\": 113444, \n",
+      "    \"name\": \"#TrumpRally\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23NationalDrinkWineDay\", \n",
+      "    \"query\": \"%23NationalDrinkWineDay\", \n",
+      "    \"tweet_volume\": 30950, \n",
+      "    \"name\": \"#NationalDrinkWineDay\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23HistoricalCats\", \n",
+      "    \"query\": \"%23HistoricalCats\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#HistoricalCats\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23OVOSoundRadio\", \n",
+      "    \"query\": \"%23OVOSoundRadio\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#OVOSoundRadio\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=Briscoe\", \n",
+      "    \"query\": \"Briscoe\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Briscoe\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Clyde+Stubblefield%22\", \n",
+      "    \"query\": \"%22Clyde+Stubblefield%22\", \n",
+      "    \"tweet_volume\": 11159, \n",
+      "    \"name\": \"Clyde Stubblefield\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23Bellator172\", \n",
+      "    \"query\": \"%23Bellator172\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#Bellator172\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Eron+Harris%22\", \n",
+      "    \"query\": \"%22Eron+Harris%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Eron Harris\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Norma+McCorvey%22\", \n",
+      "    \"query\": \"%22Norma+McCorvey%22\", \n",
+      "    \"tweet_volume\": 32465, \n",
+      "    \"name\": \"Norma McCorvey\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Swaggy+P%22\", \n",
+      "    \"query\": \"%22Swaggy+P%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Swaggy P\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Yante+Maten%22\", \n",
+      "    \"query\": \"%22Yante+Maten%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Yante Maten\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Jared+Poche%22\", \n",
+      "    \"query\": \"%22Jared+Poche%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Jared Poche\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=Rocko\", \n",
+      "    \"query\": \"Rocko\", \n",
+      "    \"tweet_volume\": 20608, \n",
+      "    \"name\": \"Rocko\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Mike+Edwards%22\", \n",
+      "    \"query\": \"%22Mike+Edwards%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Mike Edwards\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=CPAC\", \n",
+      "    \"query\": \"CPAC\", \n",
+      "    \"tweet_volume\": 17424, \n",
+      "    \"name\": \"CPAC\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Lana+Del+Rey%22\", \n",
+      "    \"query\": \"%22Lana+Del+Rey%22\", \n",
+      "    \"tweet_volume\": 70305, \n",
+      "    \"name\": \"Lana Del Rey\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Malik+Monk%22\", \n",
+      "    \"query\": \"%22Malik+Monk%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Malik Monk\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Game+2%22\", \n",
+      "    \"query\": \"%22Game+2%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Game 2\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Aaron+Gordon%22\", \n",
+      "    \"query\": \"%22Aaron+Gordon%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Aaron Gordon\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=Tavares\", \n",
+      "    \"query\": \"Tavares\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Tavares\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Stephen+Gionta%22\", \n",
+      "    \"query\": \"%22Stephen+Gionta%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Stephen Gionta\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Pop+Style%22\", \n",
+      "    \"query\": \"%22Pop+Style%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Pop Style\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Sheldon+Jeter%22\", \n",
+      "    \"query\": \"%22Sheldon+Jeter%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Sheldon Jeter\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%22Rob+Gray%22\", \n",
+      "    \"query\": \"%22Rob+Gray%22\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"Rob Gray\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=TIHWR\", \n",
+      "    \"query\": \"TIHWR\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"TIHWR\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23AaronsNewVideo\", \n",
+      "    \"query\": \"%23AaronsNewVideo\", \n",
+      "    \"tweet_volume\": 178138, \n",
+      "    \"name\": \"#AaronsNewVideo\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23MostRequestedLive\", \n",
+      "    \"query\": \"%23MostRequestedLive\", \n",
+      "    \"tweet_volume\": 23058, \n",
+      "    \"name\": \"#MostRequestedLive\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23ARCA\", \n",
+      "    \"query\": \"%23ARCA\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#ARCA\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23IGotTaxedFor\", \n",
+      "    \"query\": \"%23IGotTaxedFor\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#IGotTaxedFor\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23ItsOnlyFunUntil\", \n",
+      "    \"query\": \"%23ItsOnlyFunUntil\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#ItsOnlyFunUntil\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23UKvsUGA\", \n",
+      "    \"query\": \"%23UKvsUGA\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#UKvsUGA\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23IStandWithMarksThiccNeck\", \n",
+      "    \"query\": \"%23IStandWithMarksThiccNeck\", \n",
+      "    \"tweet_volume\": 41175, \n",
+      "    \"name\": \"#IStandWithMarksThiccNeck\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23JBL3Pt\", \n",
+      "    \"query\": \"%23JBL3Pt\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#JBL3Pt\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23TheMusicMan\", \n",
+      "    \"query\": \"%23TheMusicMan\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#TheMusicMan\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23IfIHadAPetWhale\", \n",
+      "    \"query\": \"%23IfIHadAPetWhale\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#IfIHadAPetWhale\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23BritneyEverAfter\", \n",
+      "    \"query\": \"%23BritneyEverAfter\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#BritneyEverAfter\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23SaturdayNight\", \n",
+      "    \"query\": \"%23SaturdayNight\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#SaturdayNight\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23IWontBeInvisible\", \n",
+      "    \"query\": \"%23IWontBeInvisible\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#IWontBeInvisible\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23NBATalentChallenge\", \n",
+      "    \"query\": \"%23NBATalentChallenge\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#NBATalentChallenge\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23DewNBA3x\", \n",
+      "    \"query\": \"%23DewNBA3x\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#DewNBA3x\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23TeamTrumpSongs\", \n",
+      "    \"query\": \"%23TeamTrumpSongs\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#TeamTrumpSongs\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23Soulquarius\", \n",
+      "    \"query\": \"%23Soulquarius\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#Soulquarius\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23FamilyGras2017\", \n",
+      "    \"query\": \"%23FamilyGras2017\", \n",
+      "    \"tweet_volume\": 24955, \n",
+      "    \"name\": \"#FamilyGras2017\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23metvhulk\", \n",
+      "    \"query\": \"%23metvhulk\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#metvhulk\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23wf2017w\", \n",
+      "    \"query\": \"%23wf2017w\", \n",
+      "    \"tweet_volume\": 118927, \n",
+      "    \"name\": \"#wf2017w\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23JakeMillerOnYoungHollywood\", \n",
+      "    \"query\": \"%23JakeMillerOnYoungHollywood\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#JakeMillerOnYoungHollywood\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23PoCInLove\", \n",
+      "    \"query\": \"%23PoCInLove\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#PoCInLove\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23NYIvsNJD\", \n",
+      "    \"query\": \"%23NYIvsNJD\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#NYIvsNJD\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23CrewSC\", \n",
+      "    \"query\": \"%23CrewSC\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#CrewSC\", \n",
+      "    \"promoted_content\": null\n",
+      "   }, \n",
+      "   {\n",
+      "    \"url\": \"http://twitter.com/search?q=%23C9WIN\", \n",
+      "    \"query\": \"%23C9WIN\", \n",
+      "    \"tweet_volume\": null, \n",
+      "    \"name\": \"#C9WIN\", \n",
+      "    \"promoted_content\": null\n",
+      "   }\n",
+      "  ], \n",
+      "  \"as_of\": \"2017-02-19T00:54:45Z\", \n",
+      "  \"locations\": [\n",
+      "   {\n",
+      "    \"woeid\": 23424977, \n",
+      "    \"name\": \"United States\"\n",
+      "   }\n",
+      "  ]\n",
+      " }\n",
+      "]\n"
+     ]
+    }
+   ],
+   "source": [
+    "US_WOE_ID = 23424977\n",
+    "us_trends = twitter_api.trends.place(_id=US_WOE_ID)\n",
+    "print json.dumps(us_trends, indent=1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Twitter live stream"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We already made a connection to the live Twitter stream."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 71,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<twitter.stream.TwitterStream at 0x107f86e90>"
+      ]
+     },
+     "execution_count": 71,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "twitter_stream"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 72,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "stream = twitter_stream.statuses.sample(block=True)\n",
+    "\n",
+    "testing = stream.next()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 73,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{u'delete': {u'status': {u'id': 751908545373806593,\n",
+       "   u'id_str': u'751908545373806593',\n",
+       "   u'user_id': 506721465,\n",
+       "   u'user_id_str': u'506721465'},\n",
+       "  u'timestamp_ms': u'1487465690496'}}"
+      ]
+     },
+     "execution_count": 73,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "stream.next()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 74,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{u'contributors': None,\n",
+       " u'coordinates': None,\n",
+       " u'created_at': u'Sun Feb 19 00:54:49 +0000 2017',\n",
+       " u'entities': {u'hashtags': [],\n",
+       "  u'symbols': [],\n",
+       "  u'urls': [],\n",
+       "  u'user_mentions': [{u'id': 2477140574,\n",
+       "    u'id_str': u'2477140574',\n",
+       "    u'indices': [3, 11],\n",
+       "    u'name': u'\\u3164\\u3164\\u3164',\n",
+       "    u'screen_name': u'sixuals'}]},\n",
+       " u'favorite_count': 0,\n",
+       " u'favorited': False,\n",
+       " u'filter_level': u'low',\n",
+       " u'geo': None,\n",
+       " u'id': 833117602461347840,\n",
+       " u'id_str': u'833117602461347840',\n",
+       " u'in_reply_to_screen_name': None,\n",
+       " u'in_reply_to_status_id': None,\n",
+       " u'in_reply_to_status_id_str': None,\n",
+       " u'in_reply_to_user_id': None,\n",
+       " u'in_reply_to_user_id_str': None,\n",
+       " u'is_quote_status': False,\n",
+       " u'lang': u'en',\n",
+       " u'place': None,\n",
+       " u'retweet_count': 0,\n",
+       " u'retweeted': False,\n",
+       " u'retweeted_status': {u'contributors': None,\n",
+       "  u'coordinates': None,\n",
+       "  u'created_at': u'Sat Feb 18 18:51:04 +0000 2017',\n",
+       "  u'entities': {u'hashtags': [],\n",
+       "   u'symbols': [],\n",
+       "   u'urls': [],\n",
+       "   u'user_mentions': []},\n",
+       "  u'favorite_count': 893,\n",
+       "  u'favorited': False,\n",
+       "  u'filter_level': u'low',\n",
+       "  u'geo': None,\n",
+       "  u'id': 833026060916764672,\n",
+       "  u'id_str': u'833026060916764672',\n",
+       "  u'in_reply_to_screen_name': None,\n",
+       "  u'in_reply_to_status_id': None,\n",
+       "  u'in_reply_to_status_id_str': None,\n",
+       "  u'in_reply_to_user_id': None,\n",
+       "  u'in_reply_to_user_id_str': None,\n",
+       "  u'is_quote_status': False,\n",
+       "  u'lang': u'en',\n",
+       "  u'place': None,\n",
+       "  u'retweet_count': 816,\n",
+       "  u'retweeted': False,\n",
+       "  u'source': u'<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>',\n",
+       "  u'text': u\"stop trying so hard for people who don't care\",\n",
+       "  u'truncated': False,\n",
+       "  u'user': {u'contributors_enabled': False,\n",
+       "   u'created_at': u'Sun May 04 16:50:09 +0000 2014',\n",
+       "   u'default_profile': True,\n",
+       "   u'default_profile_image': False,\n",
+       "   u'description': u'i lost my mind trying to find you \\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800\\u2800stay active for a follow \\U0001f49e',\n",
+       "   u'favourites_count': 717,\n",
+       "   u'follow_request_sent': None,\n",
+       "   u'followers_count': 14877,\n",
+       "   u'following': None,\n",
+       "   u'friends_count': 11380,\n",
+       "   u'geo_enabled': False,\n",
+       "   u'id': 2477140574,\n",
+       "   u'id_str': u'2477140574',\n",
+       "   u'is_translator': False,\n",
+       "   u'lang': u'en',\n",
+       "   u'listed_count': 38,\n",
+       "   u'location': u'turn on my notifications \\u263e',\n",
+       "   u'name': u'\\u3164\\u3164\\u3164',\n",
+       "   u'notifications': None,\n",
+       "   u'profile_background_color': u'C0DEED',\n",
+       "   u'profile_background_image_url': u'http://abs.twimg.com/images/themes/theme1/bg.png',\n",
+       "   u'profile_background_image_url_https': u'https://abs.twimg.com/images/themes/theme1/bg.png',\n",
+       "   u'profile_background_tile': False,\n",
+       "   u'profile_banner_url': u'https://pbs.twimg.com/profile_banners/2477140574/1486779481',\n",
+       "   u'profile_image_url': u'http://pbs.twimg.com/profile_images/830239175161024512/SaZpC-Wq_normal.jpg',\n",
+       "   u'profile_image_url_https': u'https://pbs.twimg.com/profile_images/830239175161024512/SaZpC-Wq_normal.jpg',\n",
+       "   u'profile_link_color': u'1DA1F2',\n",
+       "   u'profile_sidebar_border_color': u'C0DEED',\n",
+       "   u'profile_sidebar_fill_color': u'DDEEF6',\n",
+       "   u'profile_text_color': u'333333',\n",
+       "   u'profile_use_background_image': True,\n",
+       "   u'protected': False,\n",
+       "   u'screen_name': u'sixuals',\n",
+       "   u'statuses_count': 166,\n",
+       "   u'time_zone': None,\n",
+       "   u'url': None,\n",
+       "   u'utc_offset': None,\n",
+       "   u'verified': False}},\n",
+       " u'source': u'<a href=\"http://twitter.com/download/android\" rel=\"nofollow\">Twitter for Android</a>',\n",
+       " u'text': u\"RT @sixuals: stop trying so hard for people who don't care\",\n",
+       " u'timestamp_ms': u'1487465689660',\n",
+       " u'truncated': False,\n",
+       " u'user': {u'contributors_enabled': False,\n",
+       "  u'created_at': u'Mon Nov 12 17:25:55 +0000 2012',\n",
+       "  u'default_profile': False,\n",
+       "  u'default_profile_image': False,\n",
+       "  u'description': u'ig: aniszurainaien\\n Mom , dad can I go first before you ?',\n",
+       "  u'favourites_count': 2717,\n",
+       "  u'follow_request_sent': None,\n",
+       "  u'followers_count': 652,\n",
+       "  u'following': None,\n",
+       "  u'friends_count': 617,\n",
+       "  u'geo_enabled': True,\n",
+       "  u'id': 944102498,\n",
+       "  u'id_str': u'944102498',\n",
+       "  u'is_translator': False,\n",
+       "  u'lang': u'en',\n",
+       "  u'listed_count': 2,\n",
+       "  u'location': u'Malaysia',\n",
+       "  u'name': u'K E K N I S',\n",
+       "  u'notifications': None,\n",
+       "  u'profile_background_color': u'642D8B',\n",
+       "  u'profile_background_image_url': u'http://pbs.twimg.com/profile_background_images/885460815/ca55916f88a923e24f3c982d5573ad82.jpeg',\n",
+       "  u'profile_background_image_url_https': u'https://pbs.twimg.com/profile_background_images/885460815/ca55916f88a923e24f3c982d5573ad82.jpeg',\n",
+       "  u'profile_background_tile': True,\n",
+       "  u'profile_banner_url': u'https://pbs.twimg.com/profile_banners/944102498/1465585103',\n",
+       "  u'profile_image_url': u'http://pbs.twimg.com/profile_images/781070545311797248/uZ-YCIYz_normal.jpg',\n",
+       "  u'profile_image_url_https': u'https://pbs.twimg.com/profile_images/781070545311797248/uZ-YCIYz_normal.jpg',\n",
+       "  u'profile_link_color': u'F011B5',\n",
+       "  u'profile_sidebar_border_color': u'FFFFFF',\n",
+       "  u'profile_sidebar_fill_color': u'7AC3EE',\n",
+       "  u'profile_text_color': u'3D1957',\n",
+       "  u'profile_use_background_image': True,\n",
+       "  u'protected': False,\n",
+       "  u'screen_name': u'aniszurainaien',\n",
+       "  u'statuses_count': 14363,\n",
+       "  u'time_zone': u'Kuala Lumpur',\n",
+       "  u'url': None,\n",
+       "  u'utc_offset': 28800,\n",
+       "  u'verified': False}}"
+      ]
+     },
+     "execution_count": 74,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "testing"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The raw tweets that come from the Twitter stream contain lots of data, some of which lies in nested structures. Here is an example, the following code will display a single raw tweet:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "{\n",
+      "  \"delete\": {\n",
+      "    \"status\": {\n",
+      "      \"id\": 732333648914071552, \n",
+      "      \"id_str\": \"732333648914071552\", \n",
+      "      \"user_id\": 904800211, \n",
+      "      \"user_id_str\": \"904800211\"\n",
+      "    }, \n",
+      "    \"timestamp_ms\": \"1487465690423\"\n",
+      "  }\n",
+      "}\n"
+     ]
+    }
+   ],
+   "source": [
+    "print json.dumps(stream.next(), indent=2, sort_keys=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You can imagine that it is now fairly easy to write looping code to sample this Twitter \"firehose\" and then analyze the results."
+   ]
+  }
+ ],
+ "metadata": {
+  "anaconda-cloud": {},
+  "kernelspec": {
+   "display_name": "Python [default]",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}
